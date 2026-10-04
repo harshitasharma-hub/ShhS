@@ -1,1 +1,0 @@
-{"leaf": 897, "preset": "shade", "seed": 13, "mode": "whole", "bad": "dark", "samples": 20, "exposure_ev": -1.69, "res": [1024, 512], "leaf_len_m": 0.121, "cover": 0.55, "cam_tilt_deg": 20.6, "cam_dist_m": 0.238, "lens_mm": 26.3, "fstop": 2.5, "frame_cm": null, "aim_uv": null, "setup_s": 0.49, "render_s": 0.49, "light": "shade", "sky": "flat_cloud"}

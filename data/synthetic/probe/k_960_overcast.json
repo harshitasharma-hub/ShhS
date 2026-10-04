@@ -1,1 +1,0 @@
-{"leaf": 960, "preset": "overcast", "seed": 262, "engine": "EEVEE", "samples": 32, "exposure_ev": 2.53, "leaf_len_m": 0.16, "cover": 0.73, "cam_tilt_deg": 8.2, "cam_dist_m": 0.224, "lens_mm": 26.1, "fstop": 5.1, "yaw_deg": -16.6, "n_drops": 0, "setup_s": 0.38, "render_s": 1.13, "light": "overcast", "sky": "hdri:sunrise"}

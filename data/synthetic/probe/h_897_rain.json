@@ -1,1 +1,0 @@
-{"leaf": 897, "preset": "rain", "seed": 137, "engine": "EEVEE", "samples": 32, "exposure_ev": 1.59, "leaf_len_m": 0.159, "cover": 0.61, "cam_tilt_deg": 27.2, "cam_dist_m": 0.222, "lens_mm": 30.8, "fstop": 2.6, "yaw_deg": 20.6, "n_drops": 93, "setup_s": 0.6, "render_s": 1.84, "light": "overcast", "sky": "hdri:courtyard"}

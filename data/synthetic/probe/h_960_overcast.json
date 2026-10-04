@@ -1,1 +1,0 @@
-{"leaf": 960, "preset": "overcast", "seed": 232, "engine": "EEVEE", "samples": 32, "exposure_ev": 0.4, "leaf_len_m": 0.159, "cover": 0.55, "cam_tilt_deg": 0.2, "cam_dist_m": 0.224, "lens_mm": 27.8, "fstop": 2.0, "yaw_deg": -40.4, "n_drops": 0, "setup_s": 0.2, "render_s": 1.02, "light": "overcast", "sky": "hdri:forest"}

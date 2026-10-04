@@ -1,1 +1,0 @@
-{"leaf": 960, "preset": "sun", "seed": 203, "engine": "EEVEE", "samples": 32, "exposure_ev": -0.45, "leaf_len_m": 0.157, "cover": 0.65, "cam_tilt_deg": 9.4, "cam_dist_m": 0.215, "lens_mm": 32.3, "fstop": 3.0, "yaw_deg": 6.1, "n_drops": 0, "setup_s": 0.09, "render_s": 2.14, "light": "sun", "sun_el": 75.1, "sun_az": 280.7, "kelvin": 5800, "sun_energy": 3.43}

@@ -1,1 +1,0 @@
-{"leaf": 1016, "preset": "overcast", "seed": 28, "mode": "closeup", "bad": null, "samples": 20, "exposure_ev": 1.44, "res": [512, 512], "leaf_len_m": 0.156, "cover": 0.53, "cam_tilt_deg": 26.7, "cam_dist_m": 0.111, "lens_mm": 65.4, "fstop": 2.5, "frame_cm": 6.1, "aim_uv": [0.7547, 0.5731], "setup_s": 0.37, "render_s": 0.34, "light": "overcast", "sky": "hdri:courtyard"}

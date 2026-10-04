@@ -1,1 +1,0 @@
-{"leaf": 960, "preset": "rain", "seed": 207, "engine": "EEVEE", "samples": 32, "exposure_ev": 0.2, "leaf_len_m": 0.12, "cover": 0.77, "cam_tilt_deg": 25.0, "cam_dist_m": 0.105, "lens_mm": 24.3, "fstop": 3.1, "yaw_deg": -7.1, "n_drops": 102, "setup_s": 0.12, "render_s": 1.59, "light": "overcast", "sky": "flat_cloud"}

@@ -1,1 +1,0 @@
-{"leaf": 1664, "preset": "backlit", "seed": 6, "engine": "EEVEE", "samples": 32, "exposure_ev": 0.08, "leaf_len_m": 0.156, "cover": 0.63, "cam_tilt_deg": 20.5, "cam_dist_m": 0.18, "lens_mm": 26.0, "fstop": 4.4, "yaw_deg": -15.1, "n_drops": 0, "setup_s": 0.13, "render_s": 3.08, "light": "backlit", "sun_el": 44.3, "sun_az": 0.2, "kelvin": 5382, "sun_energy": 3.52}

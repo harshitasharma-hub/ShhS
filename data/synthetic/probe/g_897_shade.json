@@ -1,1 +1,0 @@
-{"leaf": 897, "preset": "shade", "seed": 105, "engine": "EEVEE", "samples": 32, "exposure_ev": 0.21, "leaf_len_m": 0.156, "cover": 0.81, "cam_tilt_deg": 27.3, "cam_dist_m": 0.173, "lens_mm": 32.2, "fstop": 4.8, "yaw_deg": 33.6, "n_drops": 0, "setup_s": 0.13, "render_s": 1.48, "light": "shade", "sky": "hdri:forest"}

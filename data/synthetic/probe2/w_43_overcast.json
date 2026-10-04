@@ -1,1 +1,0 @@
-{"leaf": 1046, "preset": "overcast", "seed": 7, "mode": "whole", "bad": null, "samples": 20, "exposure_ev": 1.04, "res": [896, 672], "leaf_len_m": 0.132, "cover": 0.49, "cam_tilt_deg": 12.1, "cam_dist_m": 0.201, "lens_mm": 24.6, "fstop": 3.8, "frame_cm": null, "aim_uv": null, "setup_s": 0.47, "render_s": 1.47, "light": "overcast", "sky": "hdri:forest"}
