@@ -19,4 +19,4 @@ Photos kept by label:
 - phoma: 36
 - rust: 84
 
-Rebuild: `uv run scripts/prepare_field.py kenya`
+Rebuild: `uv run scripts/prepare/prepare_field.py kenya`

@@ -8,7 +8,7 @@ runs/*/adapter/
 .aws_state
 # Console logs of long runs.
 logs/
-# Synthetic and field data are large. Rebuild them with scripts/synth/ and scripts/prepare_field.py.
+# Synthetic and field data are large. Rebuild them with scripts/synth/ and scripts/prepare/prepare_field.py.
 # The finished pictures (v1, unusable, field) are small and stay in git. Raw renders, cut-outs and the zip do not.
 data/synthetic/textures/
 data/synthetic/probe*/
@@ -19,3 +19,5 @@ data/diagnostics/
 # Python caches.
 __pycache__/
 *.pyc
+# macOS folder settings.
+.DS_Store

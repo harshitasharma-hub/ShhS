@@ -6,7 +6,7 @@
 """Make a contact sheet of random pictures from a synthetic manifest, to check them by eye.
 
   uv run scripts/synth/make_sheet.py v1 --n 40
-  uv run scripts/synth/make_sheet.py v1 --mode closeup --rust 1 --n 24 --out data/synthetic/v1_closeups_rust.jpg
+  uv run scripts/synth/make_sheet.py v1 --mode closeup --rust 1 --n 24 --out data/synthetic/previews/v1_closeups_rust.jpg
   uv run scripts/synth/make_sheet.py v1 --worst luma_mean --n 24      # the darkest pictures
 """
 import argparse
@@ -59,7 +59,7 @@ def main():
         d.rectangle((0, 0, len(tag) * 6 + 6, 12), fill=(0, 0, 0))
         d.text((2, 0), tag, fill=(255, 235, 80) if r["rust"] == "1" else (170, 255, 170))
         sheet.paste(im, ((i % cols) * cw + 2, (i // cols) * ch + 2))
-    out = ROOT / (a.out or f"data/synthetic/{a.version}_sheet.jpg")
+    out = ROOT / (a.out or f"data/synthetic/previews/{a.version}_sheet.jpg")
     sheet.save(out, quality=88)
     print(f"{len(rows)} pictures -> {out}")
 

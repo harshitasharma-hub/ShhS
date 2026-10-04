@@ -1,6 +1,6 @@
 # BRACOL data for the rust study
 
-This folder has the labels and the frozen split for the BRACOL coffee leaf photos. The photos stay untouched in `BRACOL_coffee_leaf_images/`.
+This folder has the labels and the frozen split for the BRACOL coffee leaf photos. The photos stay untouched in `data/bracol/raw/`.
 
 ## Files
 
@@ -57,7 +57,7 @@ Pick checkpoints and thresholds on `val`. Use `test` only to report results. The
 ## Rebuild
 
 ```bash
-uv run scripts/prepare_bracol.py
+uv run scripts/prepare/prepare_bracol.py
 ```
 
 The checksums in `manifest.csv` show whether a photo changed. `dataset.csv` has sha256 `e74bb83e681812c225c9b733720b88134819710c9b8acf213c0b25ea904d4a93`. `splits.json` has sha256 `292a780d57d78ff3d9322593abf52e952c8f68e7e0de3a92c01ea4bc360393b6`.

@@ -17,4 +17,4 @@ Photos kept by label:
 - phoma: 450
 - rust: 605
 
-Rebuild: `uv run scripts/prepare_field.py uganda`
+Rebuild: `uv run scripts/prepare/prepare_field.py uganda`

@@ -1,0 +1,12 @@
+{
+ "run": "real_d140_f10_s0",
+ "cutoff": -1.375,
+ "margin": 2.5,
+ "set_on": "1492 Uganda photos outside the 300 test photos",
+ "margin_rule": "smallest margin for which the answered photos reach 95% balanced accuracy on those photos",
+ "on_the_300_test_photos": {
+  "accuracy": 0.8933333333333333,
+  "coverage": 0.72,
+  "answered": 0.9645833333333333
+ }
+}

@@ -11,8 +11,11 @@ We made them because BRACOL has one kind of picture: a whole leaf on a plain bac
 | `v1/` | 1353 training photos made from 1221 train leaves. `images/`, `meta/` (the render settings of each photo) and `manifest.csv`. |
 | `v2/` | 1353 more training photos from the same leaves, made with the same recipe and new random seeds. Same format as v1. |
 | `v3/` | 1353 training photos, a complete replacement for v1. The healthy and rust photos are copied from v1 unchanged. The other-disease leaves are new hard negatives with a yellow, golden or orange rim around the dark lesions. See below. |
+| `combo_v1_v3rim/` | 1900 training photos: all of v1 plus the new rimmed photos of v3. It holds only a manifest. The pictures stay in `v1/` and `v3/`. Made by `make_combo.py`. |
 | `unusable/` | 150 photos that no model should judge. For testing the 'not sure' answer only. Never train on them. |
 | `textures/` | The leaf cut-outs the renders use: 1221 of 1225 train leaves passed the mask checks. Rebuild them with the scripts below. |
+| `textures_rim/` | 547 cut-outs of other-disease leaves with a painted rim, made by `add_rims.py` for v3. |
+| `previews/` | Contact sheets to look at by eye. No script reads them. |
 | `probe*` | Early test renders. They are not part of any experiment. |
 
 ## Counts in v1
@@ -57,7 +60,7 @@ Rust leaves are never painted. A close-up of a painted rust leaf could show a ri
 
 ## How to use them
 
-Training: pass `data/synthetic/v1/manifest.csv` to `scripts/train.py --synthetic-manifest`. It has the same columns as `data/bracol/manifest.csv`, and the `image` paths start at the repo root. Every row is `split` = train.
+Training: pass `data/synthetic/v1/manifest.csv` to `scripts/model/train.py --synthetic-manifest`. It has the same columns as `data/bracol/manifest.csv`, and the `image` paths start at the repo root. Every row is `split` = train.
 
 The 'not sure' test: `data/synthetic/unusable/manifest.csv` has `expect_unsure` = 1 and the kind of damage in `bad` (no_leaf, tiny, defocus, glare, dark). `rust` is empty on purpose. Count how often the model answers 'not sure' for each kind. Some photos are less damaged than others, so do not expect 100%.
 
@@ -98,11 +101,14 @@ Leaf photos: BRACOL, by Krohling, Esgario and Ventura, Mendeley Data, doi 10.176
 ## Rebuild
 
 ```bash
-uv run scripts/prepare_bracol.py                       # labels and splits
+uv run scripts/prepare/prepare_bracol.py               # labels and splits
 uv run scripts/synth/extract_textures.py --split train # cut-outs
 uv run scripts/synth/find_lesions.py                   # where the spots are
 uv run scripts/synth/generate.py v1                    # render and finish the photos
 uv run scripts/synth/generate.py unusable              # the bad-photo test set
+uv run scripts/synth/add_rims.py                       # paint rims on other-disease leaves, for v3
+uv run scripts/synth/generate_v3.py                    # set 3
+uv run scripts/synth/make_combo.py                     # set 4
 uv run scripts/synth/audit_shortcuts.py v1             # background check
 ```
 

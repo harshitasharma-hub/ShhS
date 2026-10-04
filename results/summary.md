@@ -1,6 +1,6 @@
 # Results summary
 
-46 finished runs. Made by scripts/make_results.py from runs/*/metrics.json.
+46 finished runs. Made by scripts/analyze/make_results.py from runs/*/metrics.json.
 
 ## Real field photos, by arm (detail 140)
 

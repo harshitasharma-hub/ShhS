@@ -73,8 +73,14 @@ def main():
         *([["`v3/`", f"{len(rows(SYN / 'v3' / 'manifest.csv'))} training photos, a complete replacement for v1. The healthy and rust photos are copied from v1 unchanged. "
                      "The other-disease leaves are new hard negatives with a yellow, golden or orange rim around the dark lesions. See below."]]
           if (SYN / "v3" / "manifest.csv").exists() else []),
+        *([["`combo_v1_v3rim/`", f"{len(rows(SYN / 'combo_v1_v3rim' / 'manifest.csv'))} training photos: all of v1 plus the new rimmed photos of v3. "
+                                  "It holds only a manifest. The pictures stay in `v1/` and `v3/`. Made by `make_combo.py`."]]
+          if (SYN / "combo_v1_v3rim" / "manifest.csv").exists() else []),
         ["`unusable/`", f"{len(bad)} photos that no model should judge. For testing the 'not sure' answer only. Never train on them."],
         ["`textures/`", f"The leaf cut-outs the renders use: {len(ok)} of {len(tex)} train leaves passed the mask checks. Rebuild them with the scripts below."],
+        *([["`textures_rim/`", f"{len(list((SYN / 'textures_rim').glob('*_r*.jpg')))} cut-outs of other-disease leaves with a painted rim, made by `add_rims.py` for v3."]]
+          if (SYN / "textures_rim").exists() else []),
+        *([["`previews/`", "Contact sheets to look at by eye. No script reads them."]] if (SYN / "previews").exists() else []),
         ["`probe*`", "Early test renders. They are not part of any experiment."],
     ]))
     w("")
@@ -123,7 +129,7 @@ def main():
         w("")
     w("## How to use them")
     w("")
-    w("Training: pass `data/synthetic/v1/manifest.csv` to `scripts/train.py --synthetic-manifest`. It has the same columns as `data/bracol/manifest.csv`, "
+    w("Training: pass `data/synthetic/v1/manifest.csv` to `scripts/model/train.py --synthetic-manifest`. It has the same columns as `data/bracol/manifest.csv`, "
       "and the `image` paths start at the repo root. Every row is `split` = train.")
     w("")
     w("The 'not sure' test: `data/synthetic/unusable/manifest.csv` has `expect_unsure` = 1 and the kind of damage in `bad` "
@@ -176,11 +182,14 @@ def main():
     w("## Rebuild")
     w("")
     w("```bash")
-    w("uv run scripts/prepare_bracol.py                       # labels and splits")
+    w("uv run scripts/prepare/prepare_bracol.py               # labels and splits")
     w("uv run scripts/synth/extract_textures.py --split train # cut-outs")
     w("uv run scripts/synth/find_lesions.py                   # where the spots are")
     w("uv run scripts/synth/generate.py v1                    # render and finish the photos")
     w("uv run scripts/synth/generate.py unusable              # the bad-photo test set")
+    w("uv run scripts/synth/add_rims.py                       # paint rims on other-disease leaves, for v3")
+    w("uv run scripts/synth/generate_v3.py                    # set 3")
+    w("uv run scripts/synth/make_combo.py                     # set 4")
     w("uv run scripts/synth/audit_shortcuts.py v1             # background check")
     w("```")
     w("")

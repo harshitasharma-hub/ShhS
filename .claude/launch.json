@@ -10,14 +10,14 @@
       "port": 8765
     },
     {
-      "name": "presentation-v2",
+      "name": "presentation-site",
       "runtimeExecutable": "python3",
       "runtimeArgs": [
         "-m",
         "http.server",
         "5280",
         "--directory",
-        "presentation-v2"
+        "presentation/site"
       ],
       "port": 5280
     }

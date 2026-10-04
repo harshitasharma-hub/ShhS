@@ -43,13 +43,15 @@
   },
   {
     "id": "step-1",
-    "text": "Step 1: zero-shot run, then fine-tune on BRACOL",
-    "done": false
+    "text": "Step 1: zero-shot run, then fine-tune on BRACOL. Done: AUC 0.928 zero-shot, 0.978 fine-tuned",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "step-2",
-    "text": "Step 2: make the synthetic leaves",
-    "done": false
+    "text": "Step 2: make the synthetic leaves. Done by the other session: sets v1, v2, v3 and the bad-photo set",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "synth-probe",
@@ -95,13 +97,15 @@
   },
   {
     "id": "scarcity-curve",
-    "text": "Repeat steps 1 and 4 with 10, 25, 50 and 100% of the real photos",
-    "done": false
+    "text": "Repeat steps 1 and 4 with 10, 25, 50 and 100% of the real photos. Done, 3 seeds",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "field-test",
-    "text": "Test on real farm photos",
-    "done": false
+    "text": "Test on real farm photos. Done: Uganda (1,792 photos) and Kenya (197)",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "android-export",
@@ -110,7 +114,7 @@
   },
   {
     "id": "0e75ca15",
-    "text": "Hackathon: public GitHub repo with a README (setup and description)",
+    "text": "Hackathon: public GitHub repo with a README (setup and description). README is written and updated for round 2. Still to do: push, and confirm the repo is public",
     "done": false
   },
   {
@@ -145,8 +149,9 @@
   },
   {
     "id": "ac1c2cbd",
-    "text": "AWS: GPU quota approved (support case open since Sun 4 Oct, 04:26)",
-    "done": false
+    "text": "AWS GPU quota: not needed. We used RunPod instead",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "8c18b25e",
@@ -156,13 +161,15 @@
   },
   {
     "id": "08c1163e",
-    "text": "RunPod: stop the pod now. It bills $1.10 per hour. Results, logs and 4 adapters are already on this Mac",
-    "done": false
+    "text": "RunPod pod stopped by Santiago. Checked in the console: $0.00 per hour. About $5 spent",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "0b88a00b",
-    "text": "Step 1 on the pod: real-photo fine-tunes at detail 70, 140 and 280, and the 10, 25, 50 and 100% runs",
-    "done": false
+    "text": "Step 1 on the pod: real-photo fine-tunes at detail 70, 140 and 280, and the 10, 25, 50 and 100% runs. Done",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "zeroshot-three-details",
@@ -220,14 +227,15 @@
   },
   {
     "id": "not-sure-field",
-    "text": "Set the cut-off and the not-sure margin on field photos (scripts/calibrate_field.py). About 100 local photos are enough",
+    "text": "Set the cut-off and the not-sure margin on field photos (scripts/analyze/calibrate_field.py). About 100 local photos are enough",
     "done": true,
     "doneAt": "2026-10-04"
   },
   {
     "id": "brief-video-check",
-    "text": "Check if the World Bank brief needs its own 2 to 5 minute video, besides the three 60 second videos",
-    "done": false
+    "text": "Checked: the brief needs its own 2 to 5 minute video (docs/challenge-04-concept-note.pdf, section 08). Entries without it do not make the shortlist. The script is video 4 in submission/video-scripts.md",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "adapters-pulled",
@@ -238,6 +246,34 @@
   {
     "id": "study-complete",
     "text": "The study is complete: zero-shot, real-only, synthetic only, synthetic plus real, v3 and combo, all scored on BRACOL, Uganda and Kenya",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "video-scripts",
+    "text": "Video scripts for the demo, tech and team videos are in submission/video-scripts.md. The team script has FILL IN parts only you can write",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "predict-script",
+    "text": "scripts/model/predict.py reads a leaf photo and answers rust, no rust or not sure, in English, Spanish or Portuguese. Checked on the Mac, 25 seconds",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "check-translations",
+    "text": "Have a native speaker check the Spanish and Portuguese lines in scripts/model/predict.py",
+    "done": false
+  },
+  {
+    "id": "brief-video-record",
+    "text": "Record the 2 to 5 minute brief video. It is required for the shortlist. Five parts: problem sentence, AI and guardrails, demo, the gap and tech stack, your take",
+    "done": false
+  },
+  {
+    "id": "folders-reorganized",
+    "text": "Repo folders reorganized. Scripts are in scripts/prepare, synth, model, analyze and gpu. BRACOL photos are in data/bracol/raw. See the What is where section in README.md. The talks are in presentation/talk and presentation/site.",
     "done": true,
     "doneAt": "2026-10-04"
   }
