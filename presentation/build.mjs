@@ -31,7 +31,7 @@ const options = {
   sourcemap: prod ? false : 'inline',
   minify: prod,
   legalComments: 'none',
-  loader: { '.glsl': 'text', '.vert': 'text', '.frag': 'text' },
+  loader: { '.glsl': 'text', '.vert': 'text', '.frag': 'text', '.jpg': 'dataurl', '.webp': 'dataurl', '.png': 'dataurl' },
   logLevel: 'info',
 };
 

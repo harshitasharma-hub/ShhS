@@ -194,6 +194,9 @@ export class App {
     this._notes();
     setEnv(beat.env, instant);
     this.seam.show(beat.seam.show);
+    const [tagL, tagR] = beat.seamTags || ['Photo', 'Labels'];
+    document.querySelector('.seam__tag--l').textContent = tagL;
+    document.querySelector('.seam__tag--r').textContent = tagR;
     this.seam.go(beat.seam.v, { mode: beat.seam.mode, instant });
     this.tags.clear();
 
@@ -269,14 +272,6 @@ export class App {
   }
 
   currentBeat() { return BEATS[this.index].id; }
-
-  phoneFrame(on) { document.getElementById('phoneFrame').classList.toggle('is-on', on); }
-
-  // render one frame right now (used by the photo shoot)
-  renderNow() {
-    this.rig.update(0.0001, U.uTime.value, { x: 0, y: 0 });
-    this.renderer.render(this.scene3d, this.camera);
-  }
 
   // ------------------------------------------------------------------ loop
   togglePause() {

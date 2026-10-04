@@ -6,6 +6,10 @@
 // yes-or-no task on BRACOL, a frozen split, and renders from Blender added as extra training photos.
 // We do not model how rust spreads. There are no results yet, and the talk says so.
 
+import { WORLDS, FIRST_WORLD, WORLD_NOTE } from './showcase.js';
+import { RESULTS } from './results.js';
+import { IMG } from './assets/index.js';
+
 // dur is the planned seconds. It only sets how wide each chapter is in the bar at the bottom.
 export const CHAPTERS = [
   { id: 'open', name: 'Open', dur: 20 },
@@ -31,6 +35,11 @@ const eyebrow = (text, color = 'var(--ink)') => `<p class="eyebrow"><i class="do
 const chip = (text, kind = '') => `<span class="chip ${kind ? 'chip--' + kind : ''}">${text}</span>`;
 const fact = (icon, html) => `<li><span class="ic" aria-hidden="true">${ico[icon] || ico.dot}</span><span>${html}</span></li>`;
 
+// Measured numbers, copied by tools/sync_results.py. If a run is missing, the card falls back to the plan wording.
+const zs = RESULTS.zeroShot;
+const pct = (x) => `${Math.round(x * 100)}%`;
+const two = (x) => x.toFixed(2);
+
 export const SOURCES = [
   { k: 'Challenge', t: 'Hack-Nation x World Bank Youth Summit. Small AI for Development Hackathon, Challenge 04, Annex B Agriculture. Concept note, October 2026.' },
   { k: 'FAO', t: 'FAO, 2 December 2019. "Up to 40 percent of global food crops are lost to plant pests and diseases."', href: 'https://www.fao.org/newsroom/detail/FAO-launches-2020-as-the-UN-s-International-Year-of-Plant-Health/' },
@@ -41,6 +50,8 @@ export const SOURCES = [
   { k: 'Gemma 4', t: 'Gemma 4 E2B-it model card, Google DeepMind. Apache 2.0. 2.3 billion effective parameters (5.1 billion with embeddings). Takes text, image and audio. Made for phones and laptops.', href: 'https://huggingface.co/collections/google/gemma-4' },
   { k: 'Klein et al.', t: 'Klein, Waller, Pirk, Palubicki, Tester, Michels. Synthetic data at scale: a development model to efficiently leverage machine learning in agriculture. Frontiers in Plant Science, 2024. A tomato-disease classifier trained only on renders: 26 of 29 real images right (89.6%) after a threshold fix. CC BY.', href: 'https://doi.org/10.3389/fpls.2024.1360113' },
   { k: 'Review', t: 'He, Li, Chen, Raj, Fleming, Chen, Karkee, Xiang. From 2D image synthesis to 3D scene generation: a comprehensive review of synthetic data for agricultural vision. Artificial Intelligence Review, 2026. Accepted manuscript.', href: 'https://doi.org/10.1007/s10462-026-11658-8' },
+  { k: 'Renders', t: 'Our own renders: Blender 5.2, scripts/synth/ in the ShhS repository. Each one wraps a real BRACOL train leaf (CC BY 4.0) on a bent 3D leaf and keeps that leaf\'s label. They are synthetic scenes built from real leaf textures, not leaf-free synthetic data.' },
+  { k: 'Farm photos', t: 'Chelangat, Anirwoth, Mayanja, Sserwadda. A machine learning dataset for classification of common coffee leaf diseases in Uganda. Mendeley Data, 2025. Smartphone photos, CC BY 4.0. A few appear as examples of the field test.', href: 'https://data.mendeley.com/datasets/k36wnd6knb/1' },
   { k: 'Tesla AI Day', t: 'Tesla AI Day, August 2021. Simulation for rare scenes and auto-labeled clips for training.' },
   { k: 'Datasets named in the brief', t: 'PlantVillage, PlantDoc, Cassava Leaf Disease and iBean (Makerere), BRACOL, NASA POWER, CHIRPS, iSDAsoil, Mozilla Common Voice, FLEURS, Meta MMS.' },
   { k: 'Figures', t: 'All diagrams on this page were drawn from scratch for this talk. We read the review paper and did not copy its figures (it is licensed CC BY-NC-ND). The 3D farm and leaf are a Three.js preview. The real renders come from Blender.' },
@@ -55,6 +66,10 @@ export const BEATS = [
       <p class="panel__body">One question. Do coffee leaves rendered in Blender help a small model find rust on real photos? We add them to real photos, then test on photos the model never saw. The model runs offline on Noor's phone.</p>
       <p class="panel__small">Drag the line. Left is a photo. Right is the label a render gives for free.</p>
       <div class="chips"><button class="btn" data-go="next" type="button">Start the talk <span aria-hidden="true">&rarr;</span></button></div>`,
+    float: `<figure class="hero-card">
+        <img src="${IMG.render_golden}" width="1024" height="512" decoding="async" alt="A coffee leaf with rust spots, drawn by Blender. The leaf never existed.">
+        <figcaption><span class="chip chip--sim"><i style="--c:#fff"></i>Synthetic</span><span>This leaf never existed. Blender wrapped a real BRACOL leaf skin on a 3D leaf.</span></figcaption>
+      </figure>`,
     notes: 'Hi, we are ShhS. Our question: do leaves rendered in Blender help a small model spot coffee rust? We add them to real photos and test on photos the model never saw. Drag the line to see a photo on the left and its label on the right.',
   },
 
@@ -131,48 +146,41 @@ export const BEATS = [
     seam: { v: 1, mode: 'free', show: false },
     html: `${eyebrow('Our version', 'var(--sim)')}
       <h2 class="panel__title">We render the <em>leaf</em>.</h2>
-      <p class="panel__body">In Blender we build a 3D coffee leaf with rust spots we control. Light, camera and background change on every image. Each image keeps its label. We add the renders to real photos and check if the model gets better.</p>
+      <p class="panel__body">In Blender we wrap a real BRACOL leaf photo on a bent 3D leaf. We change the light, the weather, the background and the camera. Each render keeps the label of its leaf. We add the renders to real photos and check if the model gets better.</p>
       <div class="chips">${chip('<i style="--c:#fff"></i>Blender renders', 'sim')}${chip('<i style="--c:#fff"></i>Free labels', 'sim')}${chip('<i style="--c:var(--real)"></i>Tested on real photos', 'real')}</div>
       <p class="panel__small">It may not help. That is why we test it. Every rendered image is labeled synthetic, as the brief requires.</p>`,
-    notes: 'Our idea in one line: render coffee leaves in Blender, add them to real photos, and test if the model improves. We do not model how rust spreads. We only render images. It might not help, and the test will tell us.',
+    notes: 'Our idea in one line: take real BRACOL leaves, wrap them on 3D leaves in Blender, and put them in new light, weather and backgrounds. The label comes with the leaf. We add the renders to real photos and test if the model improves. We do not model how rust spreads. It might not help, and the test will tell us.',
   },
 
-  // ------------------------------------------------------------------ lab
+  // ------------------------------------------------------------------ renders
   {
-    id: 'lab', chapter: 'lab', scene: 'farm', side: 'left', env: 'dawn',
-    seam: { v: 0.78, mode: 'free', show: true },
-    html: `${eyebrow('Render lab · preview', 'var(--sim)')}
-      <h2 class="panel__title">Turn the knobs.</h2>
-      <p class="panel__body">In Blender, the rust, the light and the camera change on every image. Try the same knobs here. Click a shrub to pick another one.</p>
-      <div class="lab">
-        <label class="lab__slider"><span class="lab__label">Rust severity</span><input type="range" min="0" max="4" step="1" value="2" name="severity" autocomplete="off" data-ctl="level" aria-label="Rust severity, 0 to 4"><output data-out="level" aria-live="off">2</output></label>
-        <div class="lab__group" role="group" aria-label="Light">
-          <span class="lab__label">Light</span>
-          <div class="lab__lights">
-            <button class="btn btn--soft" type="button" data-ctl="light" data-light="dawn" aria-pressed="true">Dawn</button>
-            <button class="btn btn--soft" type="button" data-ctl="light" data-light="noon" aria-pressed="false">Noon</button>
-            <button class="btn btn--soft" type="button" data-ctl="light" data-light="overcast" aria-pressed="false">Overcast</button>
-            <button class="btn btn--soft" type="button" data-ctl="light" data-light="late" aria-pressed="false">Late sun</button>
-          </div>
-        </div>
-        <div class="lab__row"><button class="btn btn--soft" data-ctl="view" type="button">New view</button><button class="btn btn--soft" data-ctl="spot" type="button">New shrub</button></div>
-        <p class="lab__insight" aria-live="polite" aria-atomic="true">Label saved with this image: <b data-out="label">rust yes · severity 2</b></p>
+    id: 'worlds', chapter: 'lab', scene: 'showcase', side: 'top-left', env: 'studio',
+    seam: { v: 0.5, mode: 'free', show: true }, seamTags: ['Real BRACOL photo', 'Blender render'],
+    html: `${eyebrow('Renders · same leaf, new worlds', 'var(--sim)')}
+      <h2 class="panel__title">One leaf. Many worlds.</h2>
+      <p class="panel__body">Drag the line to compare.</p>`,
+    dock: `<div class="dock__row" role="group" aria-label="Scene">
+        ${WORLDS.map((w) => `<button class="btn btn--soft" type="button" data-ctl="world" data-world="${w.key}" aria-pressed="${w.key === FIRST_WORLD}">${w.name}</button>`).join('')}
+        <span class="dock__sep" aria-hidden="true"></span>
+        <button class="btn btn--soft" type="button" data-ctl="fx" aria-pressed="false">Phone effects</button>
       </div>
-      <p class="panel__small">Preview in Three.js. The real renders come from Blender.</p>`,
-    notes: 'This is a Three.js preview of the knobs we turn in Blender. Slide the severity from 0 to 4. Change the light. Pick a new shrub or a new view. In Blender, each change would be a new image with its own label.',
+      <p class="dock__note" data-out="note" aria-live="polite">${WORLD_NOTE}</p>`,
+    notes: 'This is the heart of the idea. On the left is a real BRACOL photo, a rust leaf on a plain background. On the right is the same leaf, cut out, bent in 3D and rendered in Blender. Drag the line, then pick a scene: overcast, sun, golden hour, shade, backlit, rain, after rain. The spots are real pixels, and only the world around the leaf is new. Switch on phone effects to see what Noor\'s phone would add: noise, blur and JPEG.',
   },
 
   // ------------------------------------------------------------------ labels
   {
-    id: 'pairs', chapter: 'photos', scene: 'farm', side: 'left', env: 'dawn',
-    seam: { v: 0.5, mode: 'free', show: true },
-    html: `${eyebrow('Synthetic dataset', 'var(--sim)')}
-      <h2 class="panel__title">Every render comes with its label.</h2>
-      <p class="panel__body">The scene knows which leaves have rust, so each image is saved with its label: rust yes or no. A render can also give a mask of where the rust is. Our first test needs only yes or no.</p>
-      <div class="chips"><button class="btn" data-ctl="shutter" type="button">Take a render</button><button class="btn btn--soft" data-ctl="batch" type="button">Make 12</button><span class="chip chip--sim"><i style="--c:#fff"></i>Synthetic</span></div>
-      <div class="pairs" id="pairStrip"></div>
-      <p class="panel__small" aria-live="polite" aria-atomic="true"><b data-out="pairs">0</b> made. Preview in Three.js. The real renders come from Blender.</p>`,
-    notes: 'Each render is saved with its label. A render can also output a mask of the rust, but our first test only needs yes or no. The real images come from Blender. This page only previews them.',
+    id: 'labels', chapter: 'photos', scene: 'showcase', side: 'left', env: 'studio', grid: true,
+    seam: { v: 1, mode: 'free', show: false },
+    html: `${eyebrow('Labels · from the source leaf', 'var(--sim)')}
+      <h2 class="panel__title">Every render keeps its leaf's label.</h2>
+      <p class="panel__body">Each render starts from one real BRACOL leaf, so it inherits that leaf's label. Leaves with leaf miner, cercospora or phoma stay "no rust", so the model must tell look-alikes apart.</p>
+      <div class="scenes" role="group" aria-label="Which renders">
+        <button class="btn btn--soft" type="button" data-ctl="tab" data-tab="labeled" aria-pressed="true">Labeled renders</button>
+        <button class="btn btn--soft" type="button" data-ctl="tab" data-tab="refuse" aria-pressed="false">Photos to refuse</button>
+      </div>
+      <p class="panel__small" data-out="note" aria-live="polite">Only train-split leaves are used. No validation or test leaf feeds a render.</p>`,
+    notes: 'Each render is made from one real BRACOL train leaf, so its label is that leaf\'s label: healthy, rust with a severity, or another problem. Look-alike problems like leaf miner, cercospora and phoma stay no rust. Validation and test leaves are never used. The second tab shows photos we render on purpose to be unusable: too dark, glare, out of focus, cropped, no leaf, too small. They test that the model says not sure.',
   },
 
   // ------------------------------------------------------------------ plan
@@ -181,7 +189,7 @@ export const BEATS = [
     seam: { v: 1, mode: 'free', show: false },
     html: `${eyebrow('Step 1 · real photos only', 'var(--real)')}
       <h2 class="panel__title">Fine-tune on the real photos.</h2>
-      <p class="panel__body">We start with Gemma 4 E2B, a model made to run on phones and laptops. First we ask it as it comes: does this coffee leaf have rust? Then we fine-tune it on 1,225 BRACOL leaves and score it on 261 it never saw.</p>
+      <p class="panel__body">We start with Gemma 4 E2B, a model made to run on phones and laptops. First we ask it as it comes: does this leaf show coffee leaf rust? Then we fine-tune it on 1,225 BRACOL leaves and score it on 261 it never saw.</p>
       <p class="panel__small">We fine-tune with LoRA. It trains a thin layer on top and leaves the base model alone.</p>`,
     notes: 'Step 1 is the baseline. Gemma 4 E2B is a small multimodal model from Google, with 2.3 billion effective parameters. We ask it a yes or no question about each leaf, first with no training, then after LoRA fine-tuning on the real BRACOL training photos. We score it on 261 test leaves that no run trains on.',
   },
@@ -189,28 +197,29 @@ export const BEATS = [
     id: 'rec-2', chapter: 'recipe', scene: 'pipeline', side: 'left', env: 'studio', grid: true,
     seam: { v: 1, mode: 'free', show: false },
     html: `${eyebrow('Step 2 · make the synthetic leaves', 'var(--sim)')}
-      <h2 class="panel__title">Build the leaf in Blender.</h2>
-      <p class="panel__body">A 3D coffee leaf with a rust material. How many spots, how big and where all change from image to image. We use the same 0 to 4 severity scale as BRACOL, so we can compare by severity.</p>
-      <div class="chips"><span class="chip chip--sim"><i style="--c:#fff"></i>Synthetic</span></div>`,
-    notes: 'Step 2 is the new part. In Blender we build a coffee leaf with a rust material. We control the spots and give each image a severity from 0 to 4, the same scale BRACOL uses. We do not model how rust spreads.',
+      <h2 class="panel__title">Real leaf skin on a 3D leaf.</h2>
+      <p class="panel__body">We cut each leaf out of its BRACOL photo and wrap it on a bent 3D leaf in Blender. The rust spots are real pixels, so they look real. The label comes from the source leaf.</p>
+      <div class="chips"><span class="chip chip--sim"><i style="--c:#fff"></i>Synthetic</span></div>
+      <p class="panel__small">Only train-split leaves. Validation and test leaves never feed a render.</p>`,
+    notes: 'Step 2 is the new part, and the pipeline is built. We cut the leaf out of the photo, wrap it on a bent 3D leaf, and keep the leaf\'s own label, severity included. Only train leaves are used, so no test leaf leaks into the renders. In the data statement we say it plainly: these are synthetic scenes built from real BRACOL leaf textures. We do not model how rust spreads.',
   },
   {
     id: 'rec-3', chapter: 'recipe', scene: 'pipeline', side: 'left', env: 'studio', grid: true,
     seam: { v: 1, mode: 'free', show: false },
     html: `${eyebrow('Step 2 · render', 'var(--sim)')}
-      <h2 class="panel__title">A virtual camera takes the images.</h2>
-      <p class="panel__body">Rust, light, camera angle, distance and background change on every image. Each image is saved with its label.</p>
+      <h2 class="panel__title">Light, weather and a phone camera.</h2>
+      <p class="panel__body">Each job picks a scene: overcast, sun, golden hour, shade, backlit or rain. Blender adds soil, blurred leaves, water drops and a phone-like lens. Phone effects then add noise, blur and JPEG. One image takes about 2.5 seconds on a laptop.</p>
       <div class="chips"><span class="chip chip--sim"><i style="--c:#fff"></i>Synthetic</span></div>`,
-    notes: 'The virtual camera changes the rust, the light, the angle, the distance and the background on every shot. Each image is saved with its label, rust yes or no.',
+    notes: 'Each job picks a scene and a seed. Blender\'s fast engine draws one image in about 2.4 to 2.8 seconds on this laptop, so about 1,500 an hour with two workers. A second script then makes the image look like it came from a cheap phone: exposure, white balance, blur, noise, JPEG and sometimes rain streaks.',
   },
   {
     id: 'rec-4', chapter: 'recipe', scene: 'pipeline', side: 'left', env: 'studio', grid: true,
     seam: { v: 1, mode: 'free', show: false },
     html: `${eyebrow('Step 2 · save', 'var(--sim)')}
       <h2 class="panel__title">A folder of images and one table.</h2>
-      <p class="panel__body">The table has three columns: image, rust and split. Our training script already reads this format, so the renders plug straight in.</p>
-      <p class="panel__small">How many renders we make is still open.</p>`,
-    notes: 'The output is a folder of images and a CSV with image, rust and split. Our training script takes that CSV as an option. How many renders we make is still open. Our timing script assumes about 2,000, and that is a guess.',
+      <p class="panel__body">Each image gets a row: the file, its source leaf, the label, the scene and the seed. Our training script reads this table, so the renders plug straight in.</p>
+      <p class="panel__small">The first set is planned at 1,353 renders from 1,221 train leaves.</p>`,
+    notes: 'The output is a folder of images and a CSV. Each row keeps the source leaf id, so for the scarcity runs a render may only use leaves from the same subset. Our training script takes that CSV as an option. The first set is planned at 1,353 renders from 1,221 train leaves: 832 whole-leaf scenes and 521 close-ups, and 610 of them come from rust leaves. The render run has started.',
   },
   {
     id: 'rec-5', chapter: 'recipe', scene: 'pipeline', side: 'left', env: 'studio', grid: true,
@@ -250,16 +259,19 @@ export const BEATS = [
   {
     id: 'proof-1', chapter: 'proof', scene: 'proof', side: 'left', env: 'studio', grid: true,
     seam: { v: 1, mode: 'free', show: false },
-    html: `${eyebrow('Evidence plan', 'var(--real)')}
+    html: `${eyebrow(zs ? 'Evidence · first measurement' : 'Evidence plan', 'var(--real)')}
       <h2 class="panel__title">Will the renders help?</h2>
       <ul class="facts">
-        ${fact('dot', 'Every run is scored on the same <b>261 BRACOL test leaves</b>. No run trains on them.')}
-        ${fact('dot', 'We report <b>AUC</b> with a 95% interval, rust found by severity, false alarms, and how often it says "not sure".')}
+        ${zs
+    ? `${fact('dot', `Gemma 4 E2B with <b>no training</b> scores <b>AUC ${two(zs.auc)}</b> on the ${RESULTS.testN} locked test leaves (95% interval ${two(zs.lo)} to ${two(zs.hi)}).`)}
+        ${fact('dot', `But it finds only <b>${pct(zs.sev1)}</b> of the mildest rust, severity 1. That is Noor's case, and where renders may help most.`)}`
+    : `${fact('dot', 'Every run is scored on the same <b>261 BRACOL test leaves</b>. No run trains on them.')}
+        ${fact('dot', 'We report <b>AUC</b> with a 95% interval, rust found by severity, false alarms, and how often it says "not sure".')}`}
         ${fact('dot', 'One study trained on renders only and got <b>26 of 29</b> real tomato images right. A tiny test: encouraging, not proof (Klein et al., 2024).')}
       </ul>
       <div class="chips">${chip('<i style="--c:#9aa3c6"></i>Zero-shot')}${chip('<i style="--c:var(--sim)"></i>Renders only')}${chip('<i style="--c:var(--real)"></i>Real only')}${chip('<i style="--c:linear-gradient(var(--sim) 50%, var(--real) 50%)"></i>Real + renders')}</div>
-      <p class="panel__small">No results yet. This is the plan.</p>`,
-    notes: 'Every bar is empty on purpose. We have no results yet. All runs are scored on the same 261 locked BRACOL test leaves, with a 95% interval, rust found by severity, false alarms and the not-sure rate. If asked, be straight: the evidence is mixed. In one watermelon study, gains stopped near 1 real photo for every 10 synthetic ones, so more renders are not always better (He et al., 2026 review). A different 261 leaves pick the settings, so the test stays clean. We will say what we find, even if it is nothing.',
+      <p class="panel__small">${zs ? 'Only the zero-shot bar is measured. The empty bars are the plan.' : 'No results yet. This is the plan.'}</p>`,
+    notes: 'Only one bar is filled, and it is a real measurement: Gemma 4 E2B with no training, asked whether the leaf shows yellow or orange rust spots, on the 261 locked test leaves. The empty bars are runs that have not finished. All runs are scored on the same 261 locked BRACOL test leaves, with a 95% interval, rust found by severity, false alarms and the not-sure rate. If asked, be straight: the evidence is mixed. In one watermelon study, gains stopped near 1 real photo for every 10 synthetic ones, so more renders are not always better (He et al., 2026 review). A different 261 leaves pick the settings, so the test stays clean. The weak spot is mild rust: severity 1 is where the untrained model misses the most, and early rust is exactly what Noor needs. We will say what we find, even if it is nothing.',
   },
   {
     id: 'proof-2', chapter: 'proof', scene: 'proof', side: 'left', env: 'studio', grid: true, wide: true,
@@ -269,12 +281,12 @@ export const BEATS = [
       <ol class="gaps">
         <li><b>Farm photos.</b> BRACOL leaves sit on a plain light background. The farm test is still to do.</li>
         <li><b>Other diseases.</b> The label is rust yes or no. Leaf miner, phoma and cercospora all count as no.</li>
-        <li><b>Clean renders.</b> Real leaves have dirt, water drops and damage that our renders may lack.</li>
+        <li><b>Simpler scenes.</b> The leaf skin is real. Stems, hands and clutter are simpler than a real plant.</li>
         <li><b>A small test.</b> 261 leaves, 102 of them with rust. The intervals will be wide.</li>
         <li><b>Phones.</b> BRACOL used 5 phone models. Noor's phone and the Android build are untested.</li>
         <li><b>Languages.</b> Swahili first. A native speaker still has to check the Swahili text.</li>
       </ol>`,
-    notes: 'The brief scores what our data does not cover, so here it is: no farm photos in BRACOL, only rust as a label, renders that may look too clean, a small test set with wide intervals, untested phones, and Swahili text that needs a native speaker.',
+    notes: 'The brief scores what our data does not cover, so here it is: no farm photos in BRACOL, only rust as a label, renders whose scenes are simpler than a real plant, a small test set with wide intervals, untested phones, and Swahili text that needs a native speaker.',
   },
 
   // ------------------------------------------------------------------ phone
@@ -283,10 +295,14 @@ export const BEATS = [
     seam: { v: 1, mode: 'free', show: false },
     html: `${eyebrow('Small AI rules', 'var(--healthy)')}
       <h2 class="panel__title">Point, shoot, read. No signal needed.</h2>
-      <p class="panel__body">Gemma 4 E2B is made to run on a phone. We will convert our best model for Android and try it. It answers rust, no rust or not sure. Close to the line between yes and no, it says not sure, and a person decides.</p>
+      <p class="panel__body">Gemma 4 E2B is made to run on a phone. We will convert our best model for Android and try it. It answers rust, no rust or not sure, and a person decides.</p>
+      <ul class="facts">
+        ${zs ? fact('dot', `Close to the line between yes and no, it says not sure. Zero-shot, it answered <b>${pct(zs.answered)}</b> of the test photos and was right <b>${pct(zs.answeredAccuracy)}</b> of the time on those.`) : fact('dot', 'Close to the line between yes and no, it says not sure, and a person decides.')}
+        ${fact('dot', 'File size and speed on a phone are not measured yet.')}
+      </ul>
       <div class="chips">${chip('<i style="--c:var(--healthy)"></i>Offline')}${chip('<i style="--c:var(--healthy)"></i>Gemma 4 E2B')}${chip('<i style="--c:var(--healthy)"></i>Swahili first')}${chip('<i style="--c:var(--healthy)"></i>A person decides')}</div>
-      <p class="panel__small">File size and speed on a phone are not measured yet. Why AI and not SMS or search? An SMS cannot see a leaf, and a search needs a name Noor does not have.</p>`,
-    notes: 'It runs offline on the phone, answers rust, no rust or not sure, and a person always decides. Not sure is built in: we pick the margin on validation photos so the answers it does give are right 95% of the time, and we report how many photos it still answers. The Swahili text is shown first. We have not measured file size or speed on a phone yet.',
+      <p class="panel__small">Why AI and not SMS or search? An SMS cannot see a leaf, and a search needs a name Noor does not have.</p>`,
+    notes: 'It runs offline on the phone, answers rust, no rust or not sure, and a person always decides. Not sure is built in: we pick the margin on validation photos so the answers it does give are right 95% of the time, and we report how many photos it still answers. For the untrained model that is a bit over half of the test photos. The unusable photos we render, dark, glare, blur, cropped, tiny, test that it refuses them. The Swahili text is shown first. We have not measured file size or speed on a phone yet.',
   },
   {
     id: 'hands-2', chapter: 'phone', scene: 'phone', side: 'left', env: 'studio', grid: true,
@@ -312,10 +328,10 @@ export const BEATS = [
 ];
 
 export const SCORECARD = [
-  ['Built solution (Small AI fidelity)', '25%', 'This talk presents a plan. Built so far: the BRACOL audit and frozen split, training and scoring scripts for Gemma 4 E2B, and a timing test. The renders and the runs come next. The phone rules are in the Phone step.'],
+  ['Built solution (Small AI fidelity)', '25%', 'This talk presents a plan, with a first measurement. Built so far: the BRACOL audit and frozen split, training and scoring scripts for Gemma 4 E2B, a zero-shot score, and a Blender pipeline that renders labeled leaves in about 2.5 seconds each. The training runs come next. The phone rules are in the Phone step.'],
   ['Development relevance and impact', '20%', 'Noor and the problem statement; a farm-photo test.'],
   ['Data grounding', '15%', 'The data gap; BRACOL named with size, license and split; what the data does not cover.'],
-  ['Evidence it works', '15%', 'Four runs and a scarcity curve on one locked test; no results yet.'],
+  ['Evidence it works', '15%', 'One locked test of 261 leaves. A zero-shot baseline is measured. Four runs and a scarcity curve are next.'],
   ['Clarity, design and value of AI', '15%', 'An SMS cannot see a leaf; a search needs a name Noor lacks.'],
   ['Scalability and replication', '10%', 'Change the crop and the leaf in Blender; keep the test.'],
   ['Responsible AI, data and safety', 'Pass/fail', 'Rust, no rust or not sure; a person decides; renders labeled synthetic.'],

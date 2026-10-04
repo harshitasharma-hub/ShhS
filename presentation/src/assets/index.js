@@ -28,6 +28,7 @@ import field_1 from './field_1.jpg';
 import field_2 from './field_2.jpg';
 import field_3 from './field_3.jpg';
 import field_4 from './field_4.jpg';
+import field_5 from './field_5.jpg';
 import lab_1016 from './lab_1016.jpg';
 import lab_1046 from './lab_1046.jpg';
 import lab_1664 from './lab_1664.jpg';
@@ -36,6 +37,8 @@ import lab_365 from './lab_365.jpg';
 import lab_891 from './lab_891.jpg';
 import lab_895 from './lab_895.jpg';
 import lab_960 from './lab_960.jpg';
+import mosaic_kenya from './mosaic_kenya.jpg';
+import mosaic_plain from './mosaic_plain.jpg';
 import real_897 from './real_897.jpg';
 import render_afterrain from './render_afterrain.jpg';
 import render_backlit from './render_backlit.jpg';
@@ -87,6 +90,7 @@ export const IMG = {
   field_2,
   field_3,
   field_4,
+  field_5,
   lab_1016,
   lab_1046,
   lab_1664,
@@ -95,6 +99,8 @@ export const IMG = {
   lab_891,
   lab_895,
   lab_960,
+  mosaic_kenya,
+  mosaic_plain,
   real_897,
   render_afterrain,
   render_backlit,

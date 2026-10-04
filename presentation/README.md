@@ -4,13 +4,13 @@ An interactive talk of about 10 minutes for the World Bank Small AI for Developm
 
 The question: do coffee leaves rendered in Blender help a small model find rust on real photos? We add the renders to real photos, then test on photos the model never saw. The model is Gemma 4 E2B, fine-tuned with LoRA, and it is meant to run offline on a phone. The brief's farmer, Noor, grows coffee, maize and beans on 2 hectares.
 
-Everything is drawn in Three.js. There is no server and no network call. The page works offline.
+The 3D scenes are drawn in Three.js. The pictures are real: Blender renders from our pipeline, BRACOL leaf photos and a few farm photos. They sit inside the page, so there is no server and no network call. The page works offline.
 
 This folder is the talk only. It sits in `presentation/` of the ShhS repository. The experiment code (data audit, training and scoring scripts) lives next to it, in `scripts/`, `data/` and `runs/` at the repo root.
 
 ## Present it
 
-Open `shhs-talk.html` in Chrome, Edge, Safari or Firefox. Double-clicking the file is enough. It is the whole talk in one file (code and fonts inside), so it is the one to send, copy to a USB stick, or open on the stage laptop. `index.html` is the same talk split into `styles.css`, `dist/app.js` and `fonts/`.
+Open `shhs-talk.html` in Chrome, Edge, Safari or Firefox. Double-clicking the file is enough. It is the whole talk in one file (code, fonts and pictures inside), so it is the one to send, copy to a USB stick, or open on the stage laptop. `index.html` is the same talk split into `styles.css`, `dist/app.js` and `fonts/`.
 
 You move through the talk with the arrow keys or by scrolling. A swipe works on a touch screen. Space and the Page keys also work, so a presenter clicker does too.
 
@@ -27,13 +27,14 @@ You move through the talk with the arrow keys or by scrolling. A swipe works on 
 | ? | List of keys |
 
 - The bar at the bottom shows where you are. Each chapter is as wide as its planned share of the talk. It is a display, not a control.
-- The line down the middle of the first screen is the seam. Left of it is a photo. Right of it is the label view a render gives for free. Drag it.
-- In the Renders step, slide the rust severity from 0 to 4, change the light, or pick another shrub. In the Labels step, press Make 12.
+- The line down the middle of the first screen is the seam. Drag it.
+- In the Renders step, the left side is a real BRACOL photo and the right side is the same leaf in Blender. Drag the line, pick one of seven scenes, and switch the phone effects on and off.
+- In the Labels step, the first tab shows nine renders with the label each one inherits. The second tab shows the unusable photos we render on purpose, to test the "not sure" answer.
 - If it feels slow, press Q. The page also lowers its own resolution when the frame rate drops.
 
 ## What the talk says
 
-The talk follows the plan in the ShhS repository. Nothing in it is a result.
+The talk follows the plan in the ShhS repository.
 
 1. Fine-tune Gemma 4 E2B on the real BRACOL photos (1,225 train, 261 validation, 261 test). First score it as it comes, with no training.
 2. Make synthetic leaves in Blender, with their labels.
@@ -42,13 +43,26 @@ The talk follows the plan in the ShhS repository. Nothing in it is a result.
 5. Repeat steps 1 and 4 with 10, 25, 50 and 100% of the real training photos, 3 random draws each.
 6. Test on real farm photos. Then convert the best model for Android and try it on a phone.
 
-We do not model how rust spreads. The farm and the leaf in the talk are a Three.js preview of what Blender will render.
+One number is measured: the zero-shot score of Gemma 4 E2B on the 261 test leaves (AUC 0.93). Every other bar in the Evidence chart stays empty until its run is done.
+
+The farm in the first steps is a Three.js preview. From the Renders step on, the leaf pictures are real Blender output, and each one is marked Synthetic. We do not model how rust spreads.
 
 ## Edit it
 
 Copy, speaker notes, sources and the scorecard are in `src/content.js`. Chapter widths for the bar at the bottom are at the top of that file.
 
 Camera positions are in each scene file, under `poses`. Scenes are in `src/scenes/`.
+
+Pictures and scores come from the experiment, so two small scripts copy them in:
+
+```bash
+python3 tools/prepare_assets.py   # picks and shrinks about 60 pictures into src/assets/ (needs Pillow)
+python3 tools/sync_results.py     # copies the scores in ../runs/*/metrics.json into src/results.js
+```
+
+`prepare_assets.py` reads the renders in `../data/synthetic`, the BRACOL photos and the farm photos in `../data/field`. The tables at the top of the file say which render is used where. Change them to pick others.
+
+`sync_results.py` fills a bar in the Evidence chart only when its run exists. Run it again after each new run, then build.
 
 ```bash
 npm install     # once
@@ -63,20 +77,27 @@ npm run serve   # optional local server on http://localhost:5273
 index.html            page shell and layers
 styles.css            tokens, layout, components
 src/content.js        the talk: chapters, steps, copy, notes, sources
+src/showcase.js       which renders the Renders and Labels steps show
+src/results.js        measured scores, written by tools/sync_results.py
+src/assets/           the pictures, written by tools/prepare_assets.py
 src/app.js            steps, camera flights, seam, input
 src/world/            the farm: terrain, coffee, maize, beans, props, shaders
-src/scenes/           farm, gap, idea, pipeline, proof, phone
+src/scenes/           farm, gap, idea, pipeline, proof, phone, showcase
+tools/                the two scripts above
 ```
 
 ## Facts to check before you present
 
-- The Blender details on the slides are our plan, not a record of what was built. They are: what changes on every image (rust spots, light, camera angle, distance, backdrop), the 0 to 4 severity labels, and the table with the columns image, rust and split. The last one matches `--synthetic-manifest` in `../scripts/train.py`. Correct the slides if the real recipe differs.
-- How many renders we make is open. `../scripts/time_training.py` assumes about 2,000, and says that is a guess.
+- The Blender details come from `../scripts/synth/`. Each job wraps a real BRACOL train leaf on a bent 3D leaf, and the render keeps that leaf's label. The scenes are overcast, sun, golden hour, shade, backlit, rain and sun after rain. One image takes about 2.5 seconds with the fast engine. The manifest has the BRACOL columns plus `source_id`, `mode`, `preset` and `seed`. Check these lines again if the scripts change.
+- The first set is planned at 1,353 renders from 1,221 train leaves: 832 whole-leaf scenes and 521 close-ups, and 610 of them from rust leaves. This comes from `../data/synthetic/v1/jobs.json`. The count can change.
+- The table on the saved-set slide shows real job names from that plan, with labels from BRACOL.
+- Only train-split leaves feed a render. The talk says so because the generator asserts it.
+- The zero-shot numbers (AUC 0.93, 65% of the mildest rust, 57% of photos answered) are copied from `../runs/zeroshot_d140/metrics.json`. Take them out of `src/results.js` if that run is withdrawn.
 - BRACOL is described as "one leaf on a plain light background" because we looked at 24 photos by eye (`../data/bracol/README.md`). We did not look at all 1,747.
+- The phone screens are a design sketch, and they say so on screen. No app exists yet. File size and speed on a phone are not measured. The Android build is a to-do.
 - Swahili lines on the phone screen ("Piga picha ya jani", "Kutu ya majani", "Sina uhakika", "Muulize afisa ugani", "Angalia majani ya karibu", "Sikiliza", "Hifadhi") should be checked by a native speaker. "Kutu ya majani", "piga picha" and "sina uhakika" were confirmed in public sources. The rest were not.
-- File size and speed on a phone are not measured. The Android build is a to-do.
 - The cooperative hub is an idea for later. It is not in the first test.
-- There are no results in this talk. The Evidence chapter is a plan, and every bar in it is empty on purpose.
+- The farm photos on the slides come from the Uganda phone set (CC BY 4.0). The Kenya mosaic comes from `../data/field/kenya`. Both are real photos of other farms, so they show what field photos look like. They are not our field test results.
 
 ## Sources
 
@@ -86,13 +107,14 @@ src/scenes/           farm, gap, idea, pipeline, proof, phone
 - Mohanty, Hughes, Salathe (2016): 99.35% on the held-out set, 31.4% on images from other conditions.
 - BRACOL (Krohling, Esgario, Ventura, Mendeley Data, 2019): 1,747 leaf images, 5 phone models, CC BY 4.0.
 - Kenyan Arabica leaf set (Data in Brief, 2021): 58,555 leaf images, one plantation, Fujifilm X-T4, CC BY.
+- Coffee leaf diseases in Uganda (Chelangat, Anirwoth, Mayanja, Sserwadda, Mendeley Data, 2025): smartphone photos, CC BY 4.0.
 - Gemma 4 E2B-it model card (Google DeepMind): Apache 2.0, 2.3 billion effective parameters.
 - Klein et al., "Synthetic data at scale: a development model to efficiently leverage machine learning in agriculture", Frontiers in Plant Science, 2024 (CC BY): a tomato-disease classifier trained only on renders got 26 of 29 real images right (89.6%) after a threshold fix.
 - He et al., "From 2D image synthesis to 3D scene generation: a comprehensive review of synthetic data for agricultural vision", Artificial Intelligence Review, 2026 (accepted manuscript).
 - Tesla AI Day, August 2021: simulation for rare scenes and auto-labeled clips.
 
-All diagrams were drawn from scratch for this talk. The review paper is licensed CC BY-NC-ND, so none of its figures are copied or adapted.
+The diagrams were drawn from scratch for this talk. The review paper is licensed CC BY-NC-ND, so none of its figures are copied or adapted.
 
 ## Licenses of what ships here
 
-Three.js (MIT). Fonts: Bricolage Grotesque, Instrument Sans and DM Mono (SIL Open Font License), self-hosted in `fonts/`.
+Three.js (MIT). Fonts: Bricolage Grotesque, Instrument Sans and DM Mono (SIL Open Font License), self-hosted in `fonts/`. The BRACOL, Uganda and Kenya photos keep their own CC BY licenses. The renders are our own output.

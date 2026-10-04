@@ -39,14 +39,15 @@
       <div class="close-title close-title--pale" translate="no">ShhS</div>
     </div>
 
+    <!-- Real photo against render. Clipped by the same seam as the two layers above. Filled by showcaseScene.js. -->
+    <div class="reveal" id="reveal"></div>
+
     <canvas id="gl" aria-hidden="true"></canvas>
 
+    <!-- The labeled renders. Filled by showcaseScene.js. -->
+    <div class="gallery" id="gallery" role="group" aria-label="Rendered leaves and their labels"></div>
+
     <div class="tags" id="tags" aria-hidden="true"></div>
-    <div class="phone-frame" id="phoneFrame" aria-hidden="true">
-      <div class="phone-frame__corner tl"></div><div class="phone-frame__corner tr"></div>
-      <div class="phone-frame__corner bl"></div><div class="phone-frame__corner br"></div>
-      <div class="phone-frame__cap"><span class="dot"></span> Virtual camera</div>
-    </div>
 
     <div class="seam" id="seam" role="slider" tabindex="0" aria-label="Split between photo and label view" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
       <span class="seam__line"></span>

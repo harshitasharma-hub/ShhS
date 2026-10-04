@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { BaseScene } from './baseScene.js';
-import { COL, makeCard, plinth, matte, studioLights, RoundedBoxGeometry } from './diagram.js';
+import { COL, makeImageCard, plinth, matte, studioLights, RoundedBoxGeometry } from './diagram.js';
 import { mulberry32 } from '../core/math.js';
+import { RESULTS } from '../results.js';
 
 // proof-1: the evidence plan. The scarcity curve as an empty chart: every bar is an outline with a "?",
 //          because there are no results yet. Next to it, the locked test every run is scored on.
@@ -35,6 +36,15 @@ const GROUPS = [
 ];
 const GX = (k) => -20 + k * 10;
 
+// The measured score for one bar, or null while the run has not been done.
+// Scale: AUC 0.5 is chance (an empty bar) and 1.0 is perfect (the full outline).
+function measured(k, j) {
+  const frac = [null, '10', '25', '50', '100'][k];
+  if (k === 0) return j === 0 ? RESULTS.zeroShot : RESULTS.syn && RESULTS.syn['0'];
+  return (j === 0 ? RESULTS.real : RESULTS.mix)?.[frac] || null;
+}
+const yOf = (auc) => BAR_H * Math.max(0, Math.min(1, (auc - 0.5) / 0.5));
+
 export class ProofScene extends BaseScene {
   build() {
     const g = this.group;
@@ -65,20 +75,45 @@ export class ProofScene extends BaseScene {
         // renders plus real is drawn as brown below, blue above: both sources in one bar
         if (color) add(color, 0, BAR_H);
         else { add(COL.real, 0, BAR_H / 2); add(COL.sim, BAR_H / 2, BAR_H / 2); }
-        const q = textMesh(2, 2, (ctx, w, h) => { ctx.fillStyle = color || COL.ink; ctx.font = '700 150px "Bricolage", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', w / 2, h / 2 + 6); }, 128);
-        q.position.set(x, 0.8 + BAR_H / 2, 1.7);
-        chart.add(q);
-        this.bars.push(q);
+        const m = measured(k, j);
+        if (m && m.auc != null) {
+          // a measured bar: filled up to its score, with the 95% interval and the number
+          const H = Math.max(0.2, yOf(m.auc));
+          const solid = (c, y0, h) => { const b = new THREE.Mesh(new RoundedBoxGeometry(4.0, h, 3, 2, 0.18), matte(c, 0.5)); b.position.set(x, 0.8 + y0 + h / 2, 0); b.castShadow = true; chart.add(b); };
+          if (color) solid(color, 0, H); else { solid(COL.real, 0, H / 2); solid(COL.sim, H / 2, H / 2); }
+          const lo = yOf(m.lo), hi = yOf(m.hi), ink = matte(COL.ink, 0.4);
+          const stem = new THREE.Mesh(new THREE.BoxGeometry(0.16, Math.max(0.05, hi - lo), 0.16), ink); stem.position.set(x, 0.8 + (lo + hi) / 2, 1.7); chart.add(stem);
+          for (const yy of [lo, hi]) { const cap = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.14, 0.16), ink); cap.position.set(x, 0.8 + yy, 1.7); chart.add(cap); }
+          const val = textMesh(4.4, 2.2, (ctx, w, h) => {
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.roundRect(4, 4, w - 8, h - 8, 26); ctx.fill();
+            ctx.lineWidth = 6; ctx.strokeStyle = color || COL.ink; ctx.stroke();
+            ctx.fillStyle = COL.ink; ctx.font = '700 84px "DMMono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(m.auc.toFixed(2), w / 2, h * 0.4);
+            ctx.fillStyle = COL.slate; ctx.font = '500 38px "DMMono", monospace'; ctx.fillText(`${m.lo.toFixed(2)} to ${m.hi.toFixed(2)}`, w / 2, h * 0.76);
+          }, 512);
+          val.position.set(x, 0.8 + Math.max(hi, H) + 1.9, 1.8);
+          chart.add(val);
+        } else {
+          const q = textMesh(2, 2, (ctx, w, h) => { ctx.fillStyle = color || COL.ink; ctx.font = '700 150px "Bricolage", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', w / 2, h / 2 + 6); }, 128);
+          q.position.set(x, 0.8 + BAR_H / 2, 1.7);
+          chart.add(q);
+          this.bars.push(q);
+        }
       });
+    });
+    // the scale: AUC 0.5 is chance, 1.0 is perfect
+    [[0, '0.5 = chance'], [BAR_H, '1.0']].forEach(([y, txt]) => {
+      const tick = textMesh(4.2, 1.0, (ctx, w, h) => { ctx.fillStyle = COL.slate; ctx.font = '500 52px "DMMono", monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(txt, w - 6, h / 2); }, 512);
+      tick.position.set(GX(0) - 7.6, 0.8 + y, 1.2);
+      chart.add(tick);
     });
     rig.add(chart);
 
     // the locked test: the same 261 BRACOL leaves for every run
     const test = new THREE.Group();
     test.add(plinth(15, 12, 0.8, '#ffffff', COL.real));
-    for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
-      const card = makeCard('studio', (r * 4 + c) % 9, COL.real, r === 0 && c === 0 ? 'TEST' : null, 0.95);
-      card.position.set(-4.5 + c * 3.0, 2.4 + r * 2.6, -1.0 + r * 0.5); card.rotation.x = -0.2; test.add(card);
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+      const card = makeImageCard(`test_${r * 3 + c + 1}`, COL.real, r === 0 && c === 0 ? 'TEST' : null, 1.5);
+      card.position.set(-3.4 + c * 3.4, 2.0 + r * 1.85, -0.6 + r * 0.4); card.rotation.x = -0.2; test.add(card);
     }
     // a padlock: nothing trains on these
     const lock = new THREE.Group();
@@ -139,7 +174,7 @@ export class ProofScene extends BaseScene {
 
   _poses() {
     this.poses = {
-      'proof-1': { pos: [14, 30, 94], target: [14, -9, 0], fov: 40, parallax: 0.5 },
+      'proof-1': { pos: [8, 28, 78], target: [8, -7, 0], fov: 40, parallax: 0.5 },
       'proof-2': { pos: [8, 48, 100], target: [8, -4, 0], fov: 40, parallax: 0.7 },
     };
   }
@@ -148,9 +183,9 @@ export class ProofScene extends BaseScene {
     const t = this.app.tags;
     const at = (x, y, z) => new THREE.Vector3(x, y, z);
     GROUPS.forEach((grp, k) => {
-      t.add({ id: `pf-g${k}`, text: grp.name, sub: grp.sub, anchor: at(GX(k) - 2.5, BAR_H + 2.6, 0), side: 'r', len: 12, color: k === 0 ? COL.slate : COL.real, big: k === 0 });
+      t.add({ id: `pf-g${k}`, text: grp.name, sub: grp.sub, anchor: at(GX(k) - 2.5, BAR_H + 5.4, 0), side: 'r', len: 12, color: k === 0 ? COL.slate : COL.real, big: k === 0 });
     });
-    t.add({ id: 'pf-test', text: 'Locked test', sub: '261 BRACOL leaves', anchor: at(44, 13.4, 1.2), side: 'r', len: 22, color: COL.real, big: true });
+    t.add({ id: 'pf-test', text: 'Locked test', sub: '261 BRACOL leaves', anchor: at(44, 13.4, 1.2), side: 'l', len: 22, color: COL.real, big: true });
     t.add({ id: 'pf-metric', text: 'Score: AUC', sub: 'higher is better', anchor: at(GX(0) - 5.4, 0.8 + BAR_H * 0.55, 1.6), side: 'l', len: 18, color: COL.ink });
     t.add({ id: 'pc-x', text: 'Light', sub: 'dawn to overcast', anchor: at(16, 0, 11), side: 'r', len: 30, color: COL.slate });
     t.add({ id: 'pc-y', text: 'Backdrop', sub: 'plain to cluttered', anchor: at(-16, 22, 11), side: 'l', len: 30, color: COL.slate });

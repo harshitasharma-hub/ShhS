@@ -11,8 +11,9 @@ export class Panels {
     this.app = app;
     this.root = document.getElementById('panels');
     this.els = [];
+    this.extras = [];
     this.active = -1;
-    BEATS.forEach((b) => {
+    BEATS.forEach((b, n) => {
       const el = document.createElement('section');
       el.className = 'panel';
       el.dataset.side = b.side;
@@ -24,6 +25,18 @@ export class Panels {
       el.querySelectorAll('.panel__card > *').forEach((c, i) => c.style.setProperty('--i', i));
       this.root.appendChild(el);
       this.els.push(el);
+      // A beat can also ask for a dock (a strip of controls at the bottom of the screen) or a float
+      // (a picture that sits over the scene). Both live next to the card, so they show and hide with it.
+      this.extras[n] = [['dock', b.dock], ['float', b.float]].filter(([, html]) => html).map(([kind, html]) => {
+        const d = document.createElement('div');
+        d.className = kind;
+        d.id = `${kind}-${b.id}`;
+        d.innerHTML = brand(html);
+        d.setAttribute('inert', '');
+        d.setAttribute('aria-hidden', 'true');
+        this.root.appendChild(d);
+        return d;
+      });
     });
     this._bind();
     this._sheet();
@@ -33,10 +46,12 @@ export class Panels {
     if (this.active === i) return;
     const prev = this.els[this.active];
     if (prev) { prev.classList.remove('is-active'); prev.setAttribute('inert', ''); prev.setAttribute('aria-hidden', 'true'); }
+    this._extras(this.active, false);
     const el = this.els[i];
     el.classList.add('is-active');
     el.removeAttribute('inert');
     el.removeAttribute('aria-hidden');
+    this._extras(i, true);
     this.active = i;
     // tell screen readers where we are, once per step
     const live = document.getElementById('srLive');
@@ -46,25 +61,21 @@ export class Panels {
     }
   }
 
-  _q(sel) { return this.els[this.active] ? this.els[this.active].querySelectorAll(sel) : []; }
-  out(name, text) { this._q(`[data-out="${name}"]`).forEach((n) => { if (n.textContent !== text) n.textContent = text; }); }
-  setRange(name, v) { this._q(`input[data-ctl="${name}"]`).forEach((n) => { if (document.activeElement !== n) n.value = v; }); }
-  busy(on) { this._q('[data-ctl="shutter"], [data-ctl="batch"]').forEach((n) => { n.disabled = on; }); }
-
-  addPair(photo, mask, caption) {
-    const strip = this.root.querySelector('#pairStrip');
-    if (!strip) return;
-    const d = document.createElement('figure');
-    d.className = 'pair';
-    // the caption says what the pair shows, so the pictures themselves stay out of the reading order
-    photo.setAttribute('aria-hidden', 'true'); mask.setAttribute('aria-hidden', 'true');
-    const a = document.createElement('div'); a.className = 'pair__img'; a.appendChild(photo);
-    const b = document.createElement('div'); b.className = 'pair__img pair__img--mask'; b.appendChild(mask);
-    const c = document.createElement('figcaption'); c.textContent = caption;
-    d.append(a, b, c);
-    strip.prepend(d);
-    while (strip.children.length > 12) strip.lastChild.remove();
+  _extras(i, on) {
+    (this.extras[i] || []).forEach((d) => {
+      d.classList.toggle('is-active', on);
+      if (on) { d.removeAttribute('inert'); d.removeAttribute('aria-hidden'); }
+      else { d.setAttribute('inert', ''); d.setAttribute('aria-hidden', 'true'); }
+    });
   }
+
+  // Everything inside the active card and its docks and floats.
+  _q(sel) {
+    const p = this.els[this.active];
+    if (!p) return [];
+    return [p, ...(this.extras[this.active] || [])].flatMap((n) => [...n.querySelectorAll(sel)]);
+  }
+  out(name, text) { this._q(`[data-out="${name}"]`).forEach((n) => { if (n.textContent !== text) n.textContent = text; }); }
 
   _bind() {
     const root = this.root;

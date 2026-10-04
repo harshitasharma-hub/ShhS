@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import { BaseScene } from './baseScene.js';
-import { COL, makeCard, cardTexture, Flow, guide, plinth, edges, matte, studioLights, RoundedBoxGeometry } from './diagram.js';
-import { damp, easeOut, mulberry32 } from '../core/math.js';
+import { COL, makeImageCard, imageTexture, Flow, guide, plinth, edges, matte, studioLights, RoundedBoxGeometry, loadImage, whenLoaded, drawCover } from './diagram.js';
+import { damp, easeOut } from '../core/math.js';
+import { LABELED } from '../showcase.js';
 
 // The plan, as a model you can walk around.
 //   back row:  Blender leaf -> Blender scene -> render -> synthetic set   (all synthetic)
 //   front row: BRACOL photos (real) -> Gemma 4 E2B with LoRA -> test and phone
 //   left:      the scarcity staircase, 10 / 25 / 50 / 100% of the real photos
-// Nothing here spreads or grows. The leaf in station 2 just gets new spots on every image.
+// Nothing here spreads or grows. Every picture on a card is a real photo or a real render (src/assets).
+// Only the boxes, the model and the charts are drawn.
 
 const P = {
   real: [0, 0, 10], scar: [-27, 0, 10], s1: [-24, 0, -14], s2: [0, 0, -14], s3: [24, 0, -14], s4: [48, 0, -14], s5: [38, 0, 10], s6: [72, 0, 10],
@@ -56,9 +58,41 @@ const rrect = (ctx, x, y, w, h, r) => {
   ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 };
 
-// a rust severity (0 to 4) from a spot count, so the label on the render matches what is drawn
-const severityOf = (n) => (n === 0 ? 0 : n <= 3 ? 1 : n <= 6 ? 2 : n <= 10 ? 3 : 4);
-const SPOT_COUNTS = [0, 2, 5, 8, 13, 17];
+// A small label card: the line that travels with an image.
+function labelCard(text, w = 2.0, h = 0.5) {
+  return textPlane(w, h, (ctx, cw, ch) => {
+    ctx.fillStyle = '#fff'; rrect(ctx, 4, 4, cw - 8, ch - 8, 22); ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = COL.sim; ctx.stroke();
+    ctx.fillStyle = COL.ink; ctx.font = '700 31px "DMMono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, cw / 2, ch / 2 + 2);
+  }, 512);
+}
+
+// ---------------------------------------------------------------- the pictures each station shows
+// BRACOL train photos: healthy, rust at four severities, and three look-alike problems.
+const WALL = ['bracol_960', 'bracol_897', 'bracol_1664', 'bracol_895', 'bracol_1016', 'bracol_365', 'bracol_1741', 'bracol_1046', 'bracol_891'];
+
+// The line a render carries, from the label of its source leaf.
+const lineOf = (t) => (t.cls === 'healthy' ? 'rust no · healthy' : `${t.cls === 'rust' ? 'rust yes' : 'rust no'} · ${t.label.split(', ')[1]}`);
+const byImg = (img) => LABELED.find((t) => t.img === img);
+
+// Station 2 cycles through five leaves: the cut-out skin, the render made from it, and its label.
+const SAMPLES = [['lab_960', 'cut_0'], ['lab_1664', 'cut_1'], ['lab_1741', 'cut_2'], ['lab_1046', 'cut_3'], ['world_rain', 'cut_4']].map(([img, cut]) => {
+  const t = byImg(img);
+  return { img, cut, line: lineOf(t), meta: `source_id ${t.leaf} · ${t.scene.toLowerCase()}` };
+});
+
+// The synthetic folder: 18 renders.
+const SET = ['lab_960', 'lab_891', 'lab_1664', 'lab_1741', 'lab_1046', 'world_rain', 'lab_895', 'lab_1016', 'lab_365',
+  'render_overcast', 'render_sun', 'render_golden', 'render_shade', 'render_backlit', 'render_afterrain', 'close_overcast', 'close_sun', 'close_rain'];
+
+// The first rows of the real table: real job names from the render plan, labels from BRACOL.
+const ROWS = [['v0960_closeup_0.jpg', 0, 'train', 960], ['v1664_whole_0.jpg', 1, 'train', 1664], ['v1741_closeup_0.jpg', 1, 'train', 1741],
+  ['v0895_whole_0.jpg', 0, 'train', 895], ['v1046_closeup_0.jpg', 1, 'train', 1046]];
+
+// Held-out BRACOL test photos, and real farm photos, for the bench.
+const TESTS = ['test_1', 'test_2', 'test_3', 'test_4'];
+const FARMS = ['field_1', 'field_2', 'field_3', 'field_4'];
 
 export class PipelineScene extends BaseScene {
   build(progress) {
@@ -94,20 +128,21 @@ export class PipelineScene extends BaseScene {
 
   // ------------------------------------------------------------ stations
   _real() {
-    // BRACOL: single leaves on plain light backgrounds
+    // BRACOL: single leaves on plain light backgrounds. A wall of nine real train photos.
     const g = new THREE.Group();
     g.add(plinth(15, 8, 0.9, '#ffffff', COL.real));
-    const n = 9;
-    for (let i = 0; i < n; i++) {
-      const c = makeCard('studio', i, COL.real, i === 0 ? 'BRACOL' : null, 1.15);
-      c.position.set(-5.6 + i * 1.4, 2.3, 0.4 - i * 0.05);
-      c.rotation.y = -0.35 + i * 0.01;
-      c.rotation.x = -0.1;
-      g.add(c);
-    }
+    const wall = new THREE.Group();
+    WALL.forEach((name, i) => {
+      const c = makeImageCard(name, COL.real, i === 0 ? 'BRACOL' : null, 1.5);
+      c.position.set((i % 3 - 1) * 3.2, (1 - Math.floor(i / 3)) * 1.7, 0);
+      wall.add(c);
+    });
+    wall.position.set(0, 4.2, -0.4);
+    wall.rotation.set(-0.12, -0.22, 0);
+    g.add(wall);
     // the train photos travel to the model
     const items = [];
-    for (let i = 0; i < 7; i++) { const c = makeCard('studio', i + 20, COL.real, null, 0.55); g.add(c); items.push(c); }
+    for (let i = 0; i < 7; i++) { const c = makeImageCard(WALL[(i * 2) % WALL.length], COL.real, null, 0.7); g.add(c); items.push(c); }
     const f = new Flow([[8, 1.6, 0], [16, 1.6, 0], [24, 1.6, 0], [30, 1.6, 0]], items, { speed: 0.06, fade: 0.1 });
     f.group = 'real'; this.flows.push(f);
     g.userData.guide = guide([[8, 0.4, 0.2], [18, 0.4, 0.2], [30, 0.4, 0.2]], COL.real, 0.6);
@@ -116,38 +151,31 @@ export class PipelineScene extends BaseScene {
   }
 
   _s1() {
-    // the Blender leaf: a ladder of five leaves, severity 0 (healthy) to 4
+    // the Blender leaf: a ladder of five real leaf skins, severity 0 (healthy) to 4
     const g = new THREE.Group();
     g.add(plinth(17, 11, 0.9, '#ffffff', COL.sim));
     this.ladder = [];
     for (let st = 0; st < 5; st++) {
-      const tp = textPlane(3, 3.6, (ctx, w, h) => {
+      const name = `cut_${st}`;
+      const tp = textPlane(3.0, 2.3, (ctx, w, h) => {
         ctx.fillStyle = '#fff'; rrect(ctx, 4, 4, w - 8, h - 8, 36); ctx.fill();
         ctx.lineWidth = 8; ctx.strokeStyle = COL.sim; ctx.stroke();
-        ctx.save(); ctx.translate(w / 2, h * 0.43); ctx.rotate(-0.45);
-        ctx.beginPath(); ctx.moveTo(-w * 0.34, 0); ctx.bezierCurveTo(-w * 0.17, -h * 0.26, w * 0.17, -h * 0.26, w * 0.34, 0); ctx.bezierCurveTo(w * 0.17, h * 0.26, -w * 0.17, h * 0.26, -w * 0.34, 0);
-        ctx.fillStyle = '#1f6b3a'; ctx.fill();
-        const rng = mulberry32(5 + st);
-        const nSp = [0, 3, 6, 10, 16][st];
-        for (let k = 0; k < nSp; k++) {
-          const x = (rng() - 0.5) * w * 0.5, y = (rng() - 0.5) * h * 0.2, r = 7 + st * 5 * rng();
-          ctx.fillStyle = 'rgba(240,215,60,0.95)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28); ctx.fill();
-          ctx.fillStyle = st >= 3 ? '#4a2a12' : 'rgba(210,95,14,0.95)'; ctx.beginPath(); ctx.arc(x, y, r * 0.5, 0, 6.28); ctx.fill();
-        }
-        ctx.restore();
-        ctx.fillStyle = COL.ink; ctx.font = '600 40px "DMMono", monospace'; ctx.textAlign = 'center'; ctx.fillText(`severity ${st}`, w / 2, h * 0.9);
+        const rec = loadImage(name);
+        if (rec.done) { const iw = w * 0.94; ctx.drawImage(rec.img, (w - iw) / 2, h * 0.06, iw, iw / 2); }
+        ctx.fillStyle = COL.ink; ctx.font = '600 38px "DMMono", monospace'; ctx.textAlign = 'center'; ctx.fillText(`severity ${st}`, w / 2, h * 0.9);
       }, 384);
+      whenLoaded(name, () => tp.userData.redraw());
       tp.position.set(-6.4 + st * 3.2, 3.0, 0.5);
       tp.rotation.y = 0.12;
       g.add(tp);
       this.ladder.push(tp);
     }
-    // what changes from image to image
+    // what the leaf is made of
     const rules = textPlane(9, 2.4, (ctx, w, h) => {
       ctx.fillStyle = '#fff'; rrect(ctx, 4, 4, w - 8, h - 8, 28); ctx.fill();
       ctx.lineWidth = 6; ctx.strokeStyle = COL.sim; ctx.stroke();
       ctx.fillStyle = COL.ink; ctx.font = '700 38px "Instrument", sans-serif'; ctx.textAlign = 'left';
-      ctx.fillText('Rust spots: number, size, place', 34, 70);
+      ctx.fillText('A real leaf skin, bent on a 3D leaf', 34, 70);
       ctx.font = '400 30px "Instrument", sans-serif'; ctx.fillStyle = COL.slate;
       ctx.fillText('Severity 0 to 4, the same scale as BRACOL', 34, 124);
     }, 720);
@@ -157,33 +185,9 @@ export class PipelineScene extends BaseScene {
     return g;
   }
 
-  _backdrop(kind) {
-    const c = document.createElement('canvas'); c.width = 384; c.height = 256;
-    const ctx = c.getContext('2d'); const rng = mulberry32(300 + kind * 17);
-    if (kind === 0) {
-      // plain and light, like the BRACOL photos
-      const gr = ctx.createRadialGradient(192, 120, 20, 192, 128, 230);
-      gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#e3e7f0');
-      ctx.fillStyle = gr; ctx.fillRect(0, 0, 384, 256);
-    } else if (kind === 1) {
-      // soil
-      ctx.fillStyle = '#7a4d33'; ctx.fillRect(0, 0, 384, 256);
-      for (let i = 0; i < 260; i++) { ctx.fillStyle = `rgba(${40 + rng() * 60},${22 + rng() * 30},${10 + rng() * 20},0.35)`; ctx.beginPath(); ctx.arc(rng() * 384, rng() * 256, 3 + rng() * 14, 0, 6.283); ctx.fill(); }
-    } else {
-      // other leaves
-      ctx.fillStyle = '#1e4a2e'; ctx.fillRect(0, 0, 384, 256);
-      for (let i = 0; i < 40; i++) {
-        ctx.save(); ctx.translate(rng() * 384, rng() * 256); ctx.rotate(rng() * 6.28);
-        ctx.fillStyle = `hsl(${105 + rng() * 40},${35 + rng() * 25}%,${16 + rng() * 22}%)`;
-        ctx.beginPath(); ctx.ellipse(0, 0, 40 + rng() * 40, 14 + rng() * 14, 0, 0, 6.283); ctx.fill(); ctx.restore();
-      }
-    }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
-    return t;
-  }
-
   _leafGeometry() {
-    const L = 5.6, Wd = 1.7;
+    // a leaf-shaped sheet with a gentle fold. The texture is a 2:1 cut-out, so the sheet maps onto it one to one.
+    const L = 5.6, Wd = 1.5;
     const s = new THREE.Shape();
     s.moveTo(-L / 2, 0);
     s.bezierCurveTo(-L * 0.25, Wd * 1.1, L * 0.2, Wd * 1.05, L / 2, 0);
@@ -192,64 +196,44 @@ export class PipelineScene extends BaseScene {
     const pos = geo.attributes.position, uv = geo.attributes.uv;
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i);
-      uv.setXY(i, x / L + 0.5, y / (Wd * 2.2) + 0.5);
-      pos.setZ(i, 0.28 * (1 - ((2 * x) / L) ** 2) - 0.1 * (y / Wd) ** 2); // a gentle fold
+      uv.setXY(i, x / L + 0.5, y / (L / 2) + 0.5);
+      pos.setZ(i, 0.28 * (1 - ((2 * x) / L) ** 2) - 0.1 * (y / Wd) ** 2);
     }
     geo.computeVertexNormals();
     return geo;
   }
 
-  _drawLeaf(seed, n) {
-    const c = this.leafCanvas, ctx = c.getContext('2d'), w = c.width, h = c.height;
-    const rng = mulberry32(seed);
-    const gr = ctx.createLinearGradient(0, 0, 0, h);
-    gr.addColorStop(0, '#2f7a46'); gr.addColorStop(0.5, '#236538'); gr.addColorStop(1, '#2f7a46');
-    ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
-    ctx.lineWidth = 2;
-    for (let i = 1; i < 9; i++) {
-      const x = (i / 9) * w;
-      ctx.beginPath(); ctx.moveTo(x, h / 2); ctx.lineTo(x + 40, h / 2 - 70); ctx.moveTo(x, h / 2); ctx.lineTo(x + 40, h / 2 + 70); ctx.stroke();
-    }
-    for (let i = 0; i < n; i++) {
-      const x = w * (0.1 + 0.8 * rng()), y = h * (0.3 + 0.4 * rng()), r = 7 + rng() * 14;
-      ctx.fillStyle = 'rgba(235, 214, 70, 0.95)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
-      ctx.fillStyle = 'rgba(205, 92, 14, 0.95)'; ctx.beginPath(); ctx.arc(x, y, r * 0.5, 0, 6.283); ctx.fill();
-    }
-    this.leafTex.needsUpdate = true;
-  }
-
   _s2() {
-    // the Blender scene: one leaf, a light, a camera and a backdrop. Every 2 seconds it is a new image.
+    // the Blender scene: a real leaf skin on a bent 3D leaf, a light and a camera. The monitor shows the render.
+    // Every 2 seconds it is a new leaf, a new render and a new label.
     const g = new THREE.Group();
     g.add(plinth(20, 14, 0.9, '#ffffff', COL.sim));
-    this.bgTex = [0, 1, 2].map((k) => this._backdrop(k));
-    const frame = new THREE.Mesh(new RoundedBoxGeometry(11.6, 7.6, 0.3, 2, 0.15), matte(COL.ink, 0.5));
+    const frame = new THREE.Mesh(new RoundedBoxGeometry(11.8, 6.4, 0.3, 2, 0.15), matte(COL.ink, 0.5));
     frame.position.set(0, 5.0, -4.7); frame.castShadow = true; g.add(frame);
-    this.bg = new THREE.Mesh(new THREE.PlaneGeometry(11, 7), new THREE.MeshBasicMaterial({ map: this.bgTex[0] }));
+    this.shots = SAMPLES.map((x) => imageTexture(x.img));
+    this.skins = SAMPLES.map((x) => imageTexture(x.cut));
+    this.bg = new THREE.Mesh(new THREE.PlaneGeometry(11, 5.5), new THREE.MeshBasicMaterial({ map: this.shots[0] }));
     this.bg.position.set(0, 5.0, -4.53); g.add(this.bg);
 
-    this.leafCanvas = document.createElement('canvas'); this.leafCanvas.width = 512; this.leafCanvas.height = 256;
-    this.leafTex = new THREE.CanvasTexture(this.leafCanvas);
-    this.leafTex.colorSpace = THREE.SRGBColorSpace; this.leafTex.anisotropy = 4;
-    this.reseed = 0;
-    this._drawLeaf(11, SPOT_COUNTS[2]);
-    const leaf = new THREE.Mesh(this._leafGeometry(), new THREE.MeshStandardMaterial({ map: this.leafTex, roughness: 0.55, side: THREE.DoubleSide }));
-    leaf.position.set(0, 4.8, -1.2);
+    // the leaf on its stand
+    const leaf = new THREE.Mesh(this._leafGeometry(), new THREE.MeshStandardMaterial({ map: this.skins[0], roughness: 0.55, side: THREE.DoubleSide, transparent: true, alphaTest: 0.45 }));
+    leaf.position.set(-5.2, 3.3, 1.6);
+    leaf.scale.setScalar(0.8);
     leaf.castShadow = true;
     g.add(leaf);
     this.leaf = leaf;
+    this.stage = leaf.position.clone();
 
     // the label that comes with each image
-    this.curLabel = 'rust yes · severity 2';
-    this.labelPlane = textPlane(7.6, 1.5, (ctx, w, h) => {
+    this.curLabel = SAMPLES[0].line; this.curMeta = SAMPLES[0].meta;
+    this.labelPlane = textPlane(7.6, 2.0, (ctx, w, h) => {
       ctx.fillStyle = '#fff'; rrect(ctx, 4, 4, w - 8, h - 8, 30); ctx.fill();
       ctx.lineWidth = 6; ctx.strokeStyle = COL.sim; ctx.stroke();
-      ctx.fillStyle = COL.slate; ctx.font = '500 26px "DMMono", monospace'; ctx.textAlign = 'left'; ctx.fillText('LABEL', 36, 52);
-      ctx.fillStyle = COL.ink; ctx.font = '700 44px "Instrument", sans-serif'; ctx.fillText(this.curLabel, 36, 112);
+      ctx.fillStyle = COL.slate; ctx.font = '500 22px "DMMono", monospace'; ctx.textAlign = 'left'; ctx.fillText('LABEL', 36, 42);
+      ctx.fillStyle = COL.ink; ctx.font = '700 42px "Instrument", sans-serif'; ctx.fillText(this.curLabel, 36, 96);
+      ctx.fillStyle = COL.slate; ctx.font = '500 22px "DMMono", monospace'; ctx.fillText(this.curMeta, 36, 144);
     }, 640);
-    this.labelPlane.position.set(0, 1.55, 5.2);
+    this.labelPlane.position.set(0, 1.75, 5.2);
     this.labelPlane.rotation.x = -0.75;
     g.add(this.labelPlane);
 
@@ -278,14 +262,15 @@ export class PipelineScene extends BaseScene {
     phone.add(body);
     const screen = textPlane(2.0, 4.1, (ctx, w, h) => {
       ctx.fillStyle = '#0d1030'; ctx.fillRect(0, 0, w, h);
-      const img = cardTexture('sim', 3, null, null).image;
-      ctx.drawImage(img, 14, 60, w - 28, h * 0.62);
+      const rec = loadImage('close_sun');
+      if (rec.done) { ctx.save(); rrect(ctx, 14, 60, w - 28, h * 0.62, 14); ctx.clip(); drawCover(ctx, rec.img, 14, 60, w - 28, h * 0.62); ctx.restore(); }
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; const m = 34, L = 40;
       for (const [x, y, dx, dy] of [[m, 56, 1, 1], [w - m, 56, -1, 1], [m, h * 0.62 + 56, 1, -1], [w - m, h * 0.62 + 56, -1, -1]]) { ctx.beginPath(); ctx.moveTo(x, y + dy * L); ctx.lineTo(x, y); ctx.lineTo(x + dx * L, y); ctx.stroke(); }
       ctx.fillStyle = '#f2552c'; ctx.beginPath(); ctx.arc(40, 34, 9, 0, 6.28); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w / 2, h - 70, 30, 0, 6.28); ctx.fill();
       ctx.fillStyle = '#0d1030'; ctx.beginPath(); ctx.arc(w / 2, h - 70, 22, 0, 6.28); ctx.fill();
     }, 256);
+    whenLoaded('close_sun', () => screen.userData.redraw());
     screen.position.z = 0.19; phone.add(screen);
     const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.12, 24), matte('#0b0d22', 0.2));
     lens.rotation.x = Math.PI / 2; lens.position.set(-0.6, 1.9, -0.22); phone.add(lens);
@@ -302,10 +287,11 @@ export class PipelineScene extends BaseScene {
     // image and label leave toward the synthetic set
     const items = [];
     for (let i = 0; i < 6; i++) {
+      const t = LABELED[[2, 0, 3, 6, 4, 5][i]];
       const pair = new THREE.Group();
-      const a = makeCard('sim', i, COL.sim, 'SYNTHETIC', 1); const b = makeCard('mask', i, COL.sim, 'LABEL', 1);
-      a.position.y = 1.15; b.position.y = -1.15;
-      pair.add(a, b); pair.scale.setScalar(0.5);
+      const a = makeImageCard(t.img, COL.sim, 'SYNTHETIC', 1); const b = labelCard(lineOf(t));
+      a.position.y = 0.45; b.position.y = -0.38;
+      pair.add(a, b); pair.scale.setScalar(1.35);
       g.add(pair); items.push(pair);
     }
     const f = new Flow([[9, 3.0, 2], [14, 3.0, 0], [19, 3.0, 0]], items, { speed: 0.05, fade: 0.12 });
@@ -319,7 +305,7 @@ export class PipelineScene extends BaseScene {
     ctx.lineWidth = 8; ctx.strokeStyle = COL.sim; ctx.stroke();
     ctx.fillStyle = COL.ink; ctx.font = '700 44px "Instrument", sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('Changes on every image', 44, 82);
-    const names = ['Rust spots', 'Light', 'Camera angle', 'Distance', 'Background'];
+    const names = ['Light and weather', 'Camera angle', 'Distance', 'Background leaves', 'Phone effects'];
     names.forEach((n, i) => {
       const y = 150 + i * 72;
       ctx.fillStyle = COL.slate; ctx.font = '400 34px "Instrument", sans-serif'; ctx.fillText(n, 44, y + 10);
@@ -335,28 +321,30 @@ export class PipelineScene extends BaseScene {
     const g = new THREE.Group();
     g.add(plinth(20, 11, 0.9, '#ffffff', COL.sim));
     for (let r = 0; r < 3; r++) for (let c = 0; c < 6; c++) {
-      const card = makeCard('sim', r * 6 + c + 2, COL.sim, r === 0 && c === 0 ? 'SYNTHETIC' : null, 0.62);
-      card.position.set(-8.2 + c * 1.35, 1.9 + r * 1.35, 1.6 - r * 0.5);
+      const card = makeImageCard(SET[r * 6 + c], COL.sim, r === 0 && c === 0 ? 'SYNTHETIC' : null, 0.68);
+      card.position.set(-8.2 + c * 1.5, 1.9 + r * 1.0, 1.6 - r * 0.5);
       card.rotation.x = -0.45;
       g.add(card);
     }
-    const table = textPlane(8.4, 6.0, (ctx, w, h) => {
-      ctx.fillStyle = '#fff'; rrect(ctx, 6, 6, w - 12, h - 12, 34); ctx.fill();
-      ctx.lineWidth = 8; ctx.strokeStyle = COL.sim; ctx.stroke();
+    const table = textPlane(9.0, 5.4, (ctx, w, h) => {
+      ctx.fillStyle = '#fff'; rrect(ctx, 6, 6, w - 12, h - 12, 30); ctx.fill();
+      ctx.lineWidth = 7; ctx.strokeStyle = COL.sim; ctx.stroke();
       ctx.fillStyle = COL.ink; ctx.font = '700 40px "DMMono", monospace'; ctx.textAlign = 'left';
-      ctx.fillText('manifest.csv', 40, 74);
-      ctx.fillStyle = COL.slate; ctx.font = '500 30px "DMMono", monospace';
-      ctx.fillText('image', 40, 138); ctx.fillText('rust', 400, 138); ctx.fillText('split', 520, 138);
-      ctx.fillStyle = COL.fog; ctx.fillRect(40, 154, w - 80, 3);
-      const rows = [['leaf_0001.png', 1], ['leaf_0002.png', 0], ['leaf_0003.png', 1], ['leaf_0004.png', 0], ['leaf_0005.png', 1]];
-      rows.forEach(([name, rust], i) => {
-        const y = 204 + i * 52;
-        ctx.fillStyle = COL.ink; ctx.font = '400 30px "DMMono", monospace'; ctx.fillText(name, 40, y);
-        ctx.fillStyle = rust ? COL.alarm : COL.healthy; ctx.font = '700 30px "DMMono", monospace'; ctx.fillText(String(rust), 410, y);
-        ctx.fillStyle = COL.ink; ctx.font = '400 30px "DMMono", monospace'; ctx.fillText('train', 520, y);
+      ctx.fillText('manifest.csv', 30, 64);
+      const X = [30, 350, 436, 538];
+      ctx.fillStyle = COL.slate; ctx.font = '500 25px "DMMono", monospace';
+      ['image', 'rust', 'split', 'source_id'].forEach((t, i) => ctx.fillText(t, X[i], 116));
+      ctx.fillStyle = COL.fog; ctx.fillRect(30, 130, w - 60, 3);
+      ROWS.forEach(([name, rust, split, src], i) => {
+        const y = 176 + i * 46;
+        ctx.fillStyle = COL.ink; ctx.font = '400 26px "DMMono", monospace'; ctx.fillText(name, X[0], y);
+        ctx.fillStyle = rust ? COL.alarm : COL.healthy; ctx.font = '700 26px "DMMono", monospace'; ctx.fillText(String(rust), X[1], y);
+        ctx.fillStyle = COL.ink; ctx.font = '400 26px "DMMono", monospace'; ctx.fillText(split, X[2], y); ctx.fillText(String(src), X[3], y);
       });
-    }, 640);
-    table.position.set(5.0, 4.3, 1.0);
+      ctx.fillStyle = COL.slate; ctx.font = '500 23px "DMMono", monospace';
+      ctx.fillText('planned: 1,353 rows, train leaves only', 30, h - 26);
+    }, 800);
+    table.position.set(5.2, 4.3, 1.0);
     table.rotation.y = -0.22;
     g.add(table);
     return g;
@@ -368,7 +356,7 @@ export class PipelineScene extends BaseScene {
     const pts = [[48, 2.0, -8], [45, 2.6, -2], [41, 2.6, 3], [39, 2.4, 5.4]];
     g.add(guide(pts, COL.sim, 0.6));
     const items = [];
-    for (let i = 0; i < 5; i++) { const c = makeCard('sim', 70 + i, COL.sim, null, 0.5); g.add(c); items.push(c); }
+    for (let i = 0; i < 5; i++) { const c = makeImageCard(SET[(i * 3 + 1) % SET.length], COL.sim, null, 0.6); g.add(c); items.push(c); }
     const f = new Flow(pts, items, { speed: 0.05, fade: 0.1 });
     f.group = 'syn'; this.flows.push(f);
     return g;
@@ -379,7 +367,7 @@ export class PipelineScene extends BaseScene {
     const g = new THREE.Group();
     g.add(guide([[6, 0.3, 12], [26, 0.3, 17], [50, 0.3, 17], [66, 0.3, 14]], COL.real, 0.55));
     const items = [];
-    for (let i = 0; i < 4; i++) { const c = makeCard(i % 2 ? 'field' : 'studio', 50 + i, COL.real, null, 0.5); g.add(c); items.push(c); }
+    for (let i = 0; i < 4; i++) { const c = makeImageCard(i % 2 ? FARMS[(i + 1) % 4] : TESTS[(i + 2) % 4], COL.real, null, 0.6); g.add(c); items.push(c); }
     const f = new Flow([[6, 1.0, 12], [26, 1.0, 17], [50, 1.0, 17], [66, 1.4, 14]], items, { speed: 0.04, fade: 0.1 });
     f.group = 'real2'; this.flows.push(f);
     return g;
@@ -449,8 +437,8 @@ export class PipelineScene extends BaseScene {
     this.chip = chip;
     const bench = [];
     for (let i = 0; i < 4; i++) {
-      const c = makeCard(i < 2 ? 'studio' : 'field', 60 + i, COL.real, i < 2 ? 'TEST' : 'FARM', 0.82);
-      c.position.set(-3.3 + i * 2.2, 1.9, 5.0);
+      const c = makeImageCard(i < 2 ? TESTS[i] : FARMS[i - 2], COL.real, i < 2 ? 'TEST' : 'FARM', 1.25);
+      c.position.set(-4.1 + i * 2.75, 2.0, 5.0);
       c.rotation.x = -0.15;
       g.add(c); bench.push(c);
     }
@@ -481,11 +469,11 @@ export class PipelineScene extends BaseScene {
     this.poses = {
       'rec-1': { pos: [34, 46, 104], target: [34, -14, 8], fov: 40, parallax: 0.5 },
       'rec-2': { pos: [-12, 32, 44], target: [-12, -4, -12], fov: 38, parallax: 0.5 },
-      'rec-3': { pos: [30, 28, 36], target: [30, -4, -12], fov: 34, parallax: 0.5 },
-      'rec-4': { pos: [44, 36, 44], target: [44, -3, -4], fov: 38, parallax: 0.5 },
+      'rec-3': { pos: [24, 18, 20], target: [24, 3, -14], fov: 36, parallax: 0.5 },
+      'rec-4': { pos: [43, 30, 34], target: [40, 0, -14], fov: 36, parallax: 0.5 },
       'rec-5': { pos: [34, 30, 58], target: [37, 1, 6], fov: 36, parallax: 0.5 },
       'rec-6': { pos: [-24, 30, 50], target: [-24, 0, 6], fov: 38, parallax: 0.5 },
-      'rec-7': { pos: [60, 30, 50], target: [62, 0, 8], fov: 36, parallax: 0.5 },
+      'rec-7': { pos: [70, 22, 38], target: [68, 1, 11], fov: 34, parallax: 0.5 },
       'rec-8': { pos: [26, 90, 80], target: [26, -10, 2], fov: 44, parallax: 0.4 },
     };
   }
@@ -493,11 +481,11 @@ export class PipelineScene extends BaseScene {
   _tags() {
     const t = this.app.tags;
     const at = (x, y, z) => new THREE.Vector3(x, y, z);
-    t.add({ id: 'p-real', text: 'BRACOL', sub: 'real leaves · train 1,225 · test 261', anchor: at(-4, 4.6, 0), side: 'r', len: 22, color: COL.real, big: true });
-    t.add({ id: 'p-s1', text: 'Blender leaf', sub: '3D leaf, rust material, severity 0 to 4', anchor: at(...P.s1).add(at(0, 5.8, 0)), side: 'l', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'p-s2', text: 'Blender scene', sub: 'leaf, light, camera, backdrop', anchor: at(...P.s2).add(at(0, 9.6, 0)), side: 'r', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'p-s3', text: 'Render', sub: 'an image and its label, every time', anchor: at(...P.s3).add(at(0, 6.2, 0)), side: 'r', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'p-s4', text: 'Synthetic set', sub: 'images + table: image, rust, split', anchor: at(...P.s4).add(at(0, 7.6, 0)), side: 'r', len: 40, color: COL.sim, big: true });
+    t.add({ id: 'p-real', text: 'BRACOL', sub: 'real leaves · train 1,225 · test 261', anchor: at(-4.8, 6.7, 9.6), side: 'l', len: 20, color: COL.real, big: true });
+    t.add({ id: 'p-s1', text: 'Blender leaf', sub: '3D leaf, real BRACOL skin, severity 0 to 4', anchor: at(...P.s1).add(at(0, 5.8, 0)), side: 'l', len: 40, color: COL.sim, big: true });
+    t.add({ id: 'p-s2', text: 'Blender scene', sub: 'leaf, light, camera, render', anchor: at(...P.s2).add(at(0, 9.6, 0)), side: 'r', len: 40, color: COL.sim, big: true });
+    t.add({ id: 'p-s3', text: 'Render', sub: 'an image and its label, every time', anchor: at(...P.s3).add(at(0, 10.4, 0)), side: 'r', len: 36, color: COL.sim, big: true });
+    t.add({ id: 'p-s4', text: 'Synthetic set', sub: 'images + manifest.csv', anchor: at(...P.s4).add(at(0, 7.6, 0)), side: 'r', len: 40, color: COL.sim, big: true });
     t.add({ id: 'p-blender', text: 'Blender', sub: 'leaf, scene, render', anchor: at(10, 9.4, -14), side: 'r', len: 40, color: COL.sim, big: true });
     t.add({ id: 'p-syn', text: 'Renders join the real photos', anchor: at(44, 3.4, -1), side: 'r', len: 30, color: COL.sim });
     t.add({ id: 'p-s5', text: 'Gemma 4 E2B', sub: '2.3B effective parameters', anchor: at(P.s5[0] - 4.3, 9.4, P.s5[2] + 3), side: 'l', len: 26, color: COL.ink, big: true });
@@ -555,22 +543,21 @@ export class PipelineScene extends BaseScene {
       f.visible = !!grp && grp.visible && grp.userData.cur > 0.5;
       f.update(time);
     }
-    // station 2: every 2 seconds a new image. New spots, new backdrop, new label.
+    // station 2: every 2 seconds a new leaf. New skin, new render, new label.
     if (this.leaf) {
       const step = Math.floor(time / 2.2);
       if (step !== this._step) {
         this._step = step;
-        const n = SPOT_COUNTS[step % SPOT_COUNTS.length];
-        this._drawLeaf(40 + step * 7, n);
-        this.bg.material.map = this.bgTex[step % 3];
-        this.bg.material.needsUpdate = true;
-        const sev = severityOf(n);
-        this.curLabel = sev ? `rust yes · severity ${sev}` : 'rust no · healthy';
+        const k = ((step % SAMPLES.length) + SAMPLES.length) % SAMPLES.length; // time can start a hair below zero
+        this.bg.material.map = this.shots[k];
+        this.leaf.material.map = this.skins[k];
+        this.curLabel = SAMPLES[k].line; this.curMeta = SAMPLES[k].meta;
         this.labelPlane.userData.redraw();
       }
       const a = Math.sin(time * 0.7) * 0.75;
-      this.cam3.position.set(Math.sin(a) * 8.0, 4.2 + Math.sin(time * 0.5) * 0.7, -1.2 + Math.cos(a) * 6.4);
-      this.cam3.lookAt(this.leaf.position);
+      const st = this.stage;
+      this.cam3.position.set(st.x + Math.sin(a) * 4.6, st.y + 1.2 + Math.sin(time * 0.5) * 0.5, st.z + Math.cos(a) * 4.2);
+      this.cam3.lookAt(st);
       this.leaf.rotation.set(-0.1 + Math.sin(time * 0.6) * 0.12, 0.25 + Math.sin(time * 0.45) * 0.3, Math.sin(time * 0.5) * 0.12);
       const s = (time * 0.35) % Math.PI;
       this.sun.position.set(Math.cos(Math.PI - s) * 9, Math.sin(s) * 5 + 7, -2);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mulberry32, range } from '../core/math.js';
+import { IMG } from '../assets/index.js';
 
 // Shared pieces for the diagram scenes: the palette, procedurally drawn photo cards,
 // conveyors, plinths and outlines. Everything here is drawn from scratch.
@@ -179,6 +180,87 @@ export function makeCard(kind, variant = 0, frame = null, tag = null, scale = 1)
   m.scale.setScalar(scale);
   m.userData.kind = kind;
   return m;
+}
+
+// ---------------------------------------------------------------- real images
+// The renders, the BRACOL photos and the farm photos come from src/assets (see tools/prepare_assets.py).
+// A card shows a pale placeholder first and repaints itself when the picture has loaded.
+const pictures = new Map();
+export function loadImage(name) {
+  let rec = pictures.get(name);
+  if (!rec) {
+    if (!IMG[name]) console.warn(`missing image: ${name}`);
+    const img = new Image();
+    rec = { img, done: false, waiting: [] };
+    img.onload = () => { rec.done = true; rec.waiting.splice(0).forEach((fn) => fn(img)); };
+    img.src = IMG[name] || '';
+    pictures.set(name, rec);
+  }
+  return rec;
+}
+
+export function whenLoaded(name, fn) {
+  const rec = loadImage(name);
+  if (rec.done) fn(rec.img); else rec.waiting.push(fn);
+}
+
+// Draw `img` so it fills the box, cropping the overflow from the middle.
+export function drawCover(ctx, img, x, y, w, h) {
+  const s = Math.max(w / img.width, h / img.height);
+  const sw = w / s, sh = h / s;
+  ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, w, h);
+}
+
+// Card sizes in pixels: landscape 2:1 like BRACOL and the renders, or square like the farm photos.
+const CARD_PX = { 2: [512, 256], 1: [384, 384] };
+export function imageCardTexture(name, frame = null, tag = null, aspect = 2) {
+  const key = `img|${name}|${frame}|${tag}|${aspect}`;
+  if (texCache.has(key)) return texCache.get(key);
+  const [LW, LH] = CARD_PX[aspect];
+  const c = document.createElement('canvas');
+  c.width = LW; c.height = LH;
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  const paint = (img) => {
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, LW, LH);
+    ctx.save();
+    rr(ctx, 4, 4, LW - 8, LH - 8, 20);
+    ctx.clip();
+    if (img) drawCover(ctx, img, 0, 0, LW, LH); else { ctx.fillStyle = '#dfe5f3'; ctx.fillRect(0, 0, LW, LH); }
+    ctx.restore();
+    if (frame) { rr(ctx, 5, 5, LW - 10, LH - 10, 19); ctx.lineWidth = 9; ctx.strokeStyle = frame; ctx.stroke(); }
+    if (tag) chip(ctx, tag, frame || COL.ink, 14, LH - 38);
+    t.needsUpdate = true;
+  };
+  paint(null);
+  whenLoaded(name, paint);
+  texCache.set(key, t);
+  return t;
+}
+
+const landGeo = new THREE.PlaneGeometry(2.0, 1.0);
+const squareGeo = new THREE.PlaneGeometry(1.6, 1.6);
+export function makeImageCard(name, frame = null, tag = null, scale = 1, aspect = 2) {
+  const m = new THREE.Mesh(aspect === 1 ? squareGeo : landGeo, new THREE.MeshBasicMaterial({ map: imageCardTexture(name, frame, tag, aspect), transparent: true, side: THREE.DoubleSide }));
+  m.scale.setScalar(scale);
+  m.userData.kind = `img:${name}`;
+  return m;
+}
+
+// A plain texture that fills in when its picture has loaded.
+export function imageTexture(name) {
+  const t = new THREE.Texture();
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  whenLoaded(name, (img) => { t.image = img; t.needsUpdate = true; });
+  return t;
+}
+
+// A flat sheet that shows one picture as it is, such as a mosaic of many photos.
+export function pictureSheet(name, w, h) {
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: imageTexture(name), side: THREE.DoubleSide }));
 }
 
 // ---------------------------------------------------------------- a conveyor

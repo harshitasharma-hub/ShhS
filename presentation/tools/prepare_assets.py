@@ -96,15 +96,38 @@ def cover(img, w, h):
     return img.crop((x, y, x + w, y + h))
 
 
+def mosaic(paths, cols, rows, tw, th, gap, bg=(247, 248, 252)):
+    """One picture made of cols x rows photos, each cropped to tw by th."""
+    sheet = Image.new("RGB", (cols * tw + (cols - 1) * gap, rows * th + (rows - 1) * gap), bg)
+    for i, p in enumerate(paths[: cols * rows]):
+        sheet.paste(cover(Image.open(p).convert("RGB"), tw, th), ((i % cols) * (tw + gap), (i // cols) * (th + gap)))
+    return sheet
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for f in OUT.glob("*"):
         if f.suffix in (".jpg", ".webp"):
             f.unlink()
 
-    # the real photo that opens the reveal
-    real = Image.open(BRACOL_IMG / "897.jpg")
-    save(real.resize((1536, 768), Image.LANCZOS), "real_897", quality=84)
+    # the real photo that opens the reveal. The leaf sits where the rendered leaf sits (centre at 45.5% across,
+    # 46% down, about 54% of the width), on its own paper colour, so the wipe reads as one leaf and a new world.
+    real = Image.open(BRACOL_IMG / "897.jpg").convert("RGB")
+    W, H = 1536, 768
+    border = real.crop((0, 0, real.width, 24)).resize((1, 1), Image.BOX).getpixel((0, 0))
+    paper = Image.new("RGB", (W, H), border)
+    scale = 0.72
+    pw, ph = int(W * scale), int(H * scale)
+    photo = real.resize((pw, ph), Image.LANCZOS)
+    leaf_dx, leaf_dy = round(21 * scale / 0.72), round(10 * scale / 0.72)   # the leaf sits a little right of and below the photo middle
+    target = (round(W * 0.455), round(H * 0.46))
+    at = (target[0] - leaf_dx - pw // 2, target[1] - leaf_dy - ph // 2)
+    feather = 70
+    mask = Image.new("L", (pw, ph), 0)
+    mask.paste(255, (feather, feather, pw - feather, ph - feather))
+    mask = mask.filter(ImageFilter.GaussianBlur(feather / 2.2))
+    paper.paste(photo, at, mask)
+    save(paper, "real_897", quality=86)
 
     for name, rel in CLEAN.items():
         save(Image.open(SYN / rel).convert("RGB"), name, quality=88)
@@ -147,14 +170,29 @@ def main():
         if bbox: rgba = rgba.crop(bbox)
         s = 512 / rgba.width
         rgba = rgba.resize((512, max(1, round(rgba.height * s))), Image.LANCZOS)
-        save(rgba, f"cut_{sev}", ext="webp", quality=86)
+        # every cut-out sits in the middle of the same 2:1 canvas, so one 3D leaf can wear any of them
+        canvas = Image.new("RGBA", (512, 256), (0, 0, 0, 0))
+        canvas.paste(rgba, (0, (256 - rgba.height) // 2), rgba)
+        save(canvas, f"cut_{sev}", ext="webp", quality=86)
 
-    # real farm photos (Uganda, smartphone, CC BY 4.0) for the field-test cards
+    # real farm photos (Uganda, smartphone, CC BY 4.0) for the field-test cards.
+    # Picked by eye from the rust-labelled photos: orange rust spots on green leaves, in the field.
     fm = list(csv.DictReader(open(FIELD / "manifest.csv")))
-    field = [r for r in fm if r["rust"] == "1"][:3] + [r for r in fm if r["group"] == "healthy"][:1]
-    for n, r in enumerate(field):
-        im = Image.open(ROOT / r["image"]).convert("RGB")
+    rust_field = [r for r in fm if r["rust"] == "1"]
+    for n, k in enumerate((5, 11, 28, 34, 20)):
+        im = Image.open(ROOT / rust_field[k]["image"]).convert("RGB")
         save(im.resize((256, 256), Image.LANCZOS), f"field_{n + 1}", quality=84)
+
+    # mosaics: one picture made of many real photos, for the walls in the data-gap steps
+    rows_all = list(csv.DictReader(open(MANIFEST)))
+    train = sorted((r for r in rows_all if r["split"] == "train"), key=lambda r: int(r["id"]))
+    rust_t = [r for r in train if r["rust"] == "1"]
+    other_t = [r for r in train if r["rust"] != "1"]
+    pick = lambda lst, n: [lst[round(i * (len(lst) - 1) / (n - 1))] for i in range(n)]
+    ids = [r["id"] for pair in zip(pick(other_t, 24), pick(rust_t, 24)) for r in pair]
+    save(mosaic([BRACOL_IMG / f"{i}.jpg" for i in ids], 6, 8, 192, 96, 6), "mosaic_plain", quality=74)
+    kenya = sorted((ROOT / "data" / "field" / "kenya" / "images").glob("*.jpg"))
+    save(mosaic(pick(kenya, 98), 14, 7, 96, 96, 4), "mosaic_kenya", quality=72)
 
     # the index the code imports from
     names = sorted(n for n, _, _ in written)

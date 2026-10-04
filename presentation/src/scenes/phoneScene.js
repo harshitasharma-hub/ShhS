@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BaseScene } from './baseScene.js';
-import { COL, cardCanvas, matte, studioLights, plinth, RoundedBoxGeometry, edges } from './diagram.js';
+import { COL, matte, studioLights, plinth, RoundedBoxGeometry, edges, loadImage, whenLoaded, drawCover } from './diagram.js';
 import { damp, easeOut } from '../core/math.js';
 
 // Noor's phone, and the optional cooperative hub. The screen shows three moments in a loop:
@@ -24,19 +24,26 @@ function wrapText(ctx, text, x, y, maxW, lh) {
   return y + lh;
 }
 
+// The photos on the screen. They are real pictures, but the screens are a design sketch: no app exists yet.
+const SHOTS = { camera: 'field_2', result: 'field_4', notsure: 'bad_glare' };
+function photo(ctx, name, x, y, w, h, r) {
+  const rec = loadImage(name);
+  ctx.save(); rr(ctx, x, y, w, h, r); ctx.clip();
+  if (rec.done) drawCover(ctx, rec.img, x, y, w, h); else { ctx.fillStyle = '#dfe5f3'; ctx.fillRect(x, y, w, h); }
+  ctx.restore();
+}
+
 function drawScreen(ctx, state, t) {
   ctx.clearRect(0, 0, SW, SH);
   ctx.fillStyle = '#f6f7fc'; ctx.fillRect(0, 0, SW, SH);
   // status bar: offline
   ctx.fillStyle = COL.ink; ctx.font = '500 22px "DMMono", monospace'; ctx.textAlign = 'left';
-  ctx.fillText('9:41', 30, 46);
+  ctx.fillText('DESIGN SKETCH', 30, 46);
   ctx.textAlign = 'right'; ctx.fillText('OFFLINE', SW - 30, 46); ctx.textAlign = 'left';
   ctx.fillStyle = COL.healthy; ctx.beginPath(); ctx.arc(SW - 150, 38, 8, 0, 6.28); ctx.fill();
   if (state === 'camera') {
     ctx.fillStyle = COL.ink; rr(ctx, 24, 70, SW - 48, 640, 30); ctx.fill();
-    ctx.save(); rr(ctx, 24, 70, SW - 48, 640, 30); ctx.clip();
-    ctx.drawImage(cardCanvas('refined', 3, null, null), 24, 70, SW - 48, 640);
-    ctx.restore();
+    photo(ctx, SHOTS.camera, 24, 70, SW - 48, 640, 30);
     // viewfinder
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; const m = 78, L = 54, y0 = 150, y1 = 630;
     for (const [x, y, dx, dy] of [[m, y0, 1, 1], [SW - m, y0, -1, 1], [m, y1, 1, -1], [SW - m, y1, -1, -1]]) { ctx.beginPath(); ctx.moveTo(x, y + dy * L); ctx.lineTo(x, y); ctx.lineTo(x + dx * L, y); ctx.stroke(); }
@@ -47,12 +54,7 @@ function drawScreen(ctx, state, t) {
     ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(SW / 2, 940, 36 + Math.sin(t * 4) * 1.5, 0, 6.28); ctx.fill();
     ctx.textAlign = 'left';
   } else if (state === 'result') {
-    ctx.save(); rr(ctx, 24, 70, SW - 48, 330, 30); ctx.clip();
-    ctx.drawImage(cardCanvas('refined', 3, null, null), 24, 40, SW - 48, 400);
-    ctx.restore();
-    // highlighted spot
-    const p = 0.5 + 0.5 * Math.sin(t * 3);
-    ctx.strokeStyle = COL.early; ctx.lineWidth = 7; ctx.setLineDash([16, 10]); rr(ctx, 170 - p * 6, 150 - p * 6, 170 + p * 12, 120 + p * 12, 16); ctx.stroke(); ctx.setLineDash([]);
+    photo(ctx, SHOTS.result, 24, 70, SW - 48, 330, 30);
     ctx.fillStyle = '#fff'; rr(ctx, 24, 380, SW - 48, 620, 30); ctx.fill();
     ctx.fillStyle = COL.ink; ctx.textAlign = 'left';
     ctx.font = '800 60px "Bricolage", sans-serif'; ctx.fillText('Kutu ya majani', 56, 470);
@@ -71,9 +73,7 @@ function drawScreen(ctx, state, t) {
     ctx.fillStyle = COL.ink; ctx.fillText('Hifadhi', 361, 925);
     ctx.textAlign = 'left';
   } else {
-    ctx.save(); rr(ctx, 24, 70, SW - 48, 330, 30); ctx.clip();
-    ctx.drawImage(cardCanvas('field', 4, null, null), 24, 40, SW - 48, 400);
-    ctx.restore();
+    photo(ctx, SHOTS.notsure, 24, 70, SW - 48, 330, 30);
     ctx.fillStyle = '#fff'; rr(ctx, 24, 380, SW - 48, 620, 30); ctx.fill();
     ctx.fillStyle = COL.ink;
     ctx.font = '800 60px "Bricolage", sans-serif'; ctx.fillText('Sina uhakika', 56, 470);
@@ -117,6 +117,7 @@ export class PhoneScene extends BaseScene {
     g.add(phone);
     this.phone = phone;
     this._draw();
+    Object.values(SHOTS).forEach((n) => whenLoaded(n, () => this._draw()));
 
     // fixed list of answers, circling the phone
     this.chips = new THREE.Group();
@@ -191,6 +192,7 @@ export class PhoneScene extends BaseScene {
   _tags() {
     const t = this.app.tags;
     const at = (x, y, z) => new THREE.Vector3(x, y, z);
+    t.add({ id: 'h-sketch', text: 'Design sketch', sub: 'a mockup, not a working app', anchor: at(-0.2, 19.4, 0.6), side: 'l', len: 30, color: COL.slate });
     t.add({ id: 'h-offline', text: 'Offline', sub: 'no signal, no data bundle', anchor: at(8.4, 17.8, 0.6), side: 'r', len: 40, color: COL.healthy, big: true });
     t.add({ id: 'h-list', text: 'Three answers', sub: 'rust, no rust, or not sure', anchor: at(14.5, 14.2, 1), side: 'r', len: 26, color: COL.ink, big: true });
     t.add({ id: 'h-human', text: 'A person decides', sub: 'it says "not sure" and points to the officer', anchor: at(-0.2, 3.2, 0.6), side: 'l', len: 44, color: COL.alarm, big: true });
@@ -201,8 +203,8 @@ export class PhoneScene extends BaseScene {
   enter(id) {
     const t = this.app.tags;
     this.hubOn = id === 'hands-2';
-    if (id === 'hands-1') t.only(['h-offline', 'h-list', 'h-human']);
-    else t.only(['h-hub', 'h-link', 'h-offline']);
+    if (id === 'hands-1') t.only(['h-sketch', 'h-offline', 'h-list', 'h-human']);
+    else t.only(['h-sketch', 'h-hub', 'h-link', 'h-offline']);
     this._modeButtons();
   }
 
@@ -210,7 +212,7 @@ export class PhoneScene extends BaseScene {
     if (name === 'mode') {
       this.hubOn = ev.mode === 'hub';
       this._modeButtons();
-      this.app.tags.only(this.hubOn ? ['h-hub', 'h-link', 'h-offline'] : ['h-offline', 'h-list', 'h-human']);
+      this.app.tags.only(this.hubOn ? ['h-sketch', 'h-hub', 'h-link', 'h-offline'] : ['h-sketch', 'h-offline', 'h-list', 'h-human']);
       this.app.rig.flyTo(this.hubOn ? this.poses['hands-2'] : this.poses['hands-1'], 1.4);
     }
   }
