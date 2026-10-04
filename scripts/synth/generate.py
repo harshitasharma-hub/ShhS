@@ -15,7 +15,8 @@ leaves are never used. The run can be stopped and started again: finished images
 
 Output: data/synthetic/<version>/{images/, meta/, manifest.csv, jobs.json}.
 manifest.csv has the same columns as data/bracol/manifest.csv, plus source_id (the BRACOL leaf id),
-mode, preset and seed. To train on a data-scarcity subset, keep rows whose source_id is in that subset.
+mode, preset and seed. Extra phone versions of the same render (--variants 2 or more) go to manifest_variants.csv,
+never to manifest.csv. To train on a data-scarcity subset, keep rows whose source_id is in that subset.
 """
 import argparse
 import csv
@@ -52,7 +53,7 @@ CLOSEUP_OUT = [(256, 0.35), (384, 0.25), (512, 0.40)]
 BAD_KINDS = ["no_leaf", "tiny", "defocus", "glare", "dark"]
 COLUMNS = ["id", "image", "source", "split", "group", "rust", "miner", "phoma", "cercospora", "severity",
            "predominant", "n_stress", "stratum", "width", "height", "sha256",
-           "source_id", "mode", "preset", "seed", "bad", "expect_unsure"]
+           "source_id", "mode", "preset", "seed", "bad", "expect_unsure", "variant", "luma_mean", "luma_std", "sharp"]
 
 
 def pick(rng, weighted):
@@ -130,8 +131,9 @@ def plan_unusable(version, per_kind, healthy_pool, rows):
 
 def run_blender(chunk, path, log):
     path.write_text(json.dumps(chunk))
-    cmd = [BLENDER, "-b", "--factory-startup", "--python", str(ROOT / "scripts/synth/blender_render.py"), "--", str(path)]
-    p = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, preexec_fn=lambda: os.nice(10))
+    cmd = ["nice", "-n", "10", BLENDER, "-b", "--factory-startup", "--python",
+           str(ROOT / "scripts/synth/blender_render.py"), "--", str(path)]  # low CPU priority: training shares this Mac
+    p = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
     with open(log, "a") as f:
         for line in (p.stdout + p.stderr).splitlines():
             if line.startswith(("[render]", "[fail]", "Traceback", "  File", "Error", "AttributeError", "TypeError", "KeyError")):
@@ -139,39 +141,49 @@ def run_blender(chunk, path, log):
     return p.returncode
 
 
-def finish(job, root, brow):
-    """Add the phone effects to one raw render. Returns a manifest row, or None if the render is missing."""
+def finish(job, root, brow, variant=0):
+    """Add the phone effects to one raw render. Returns a manifest row, or None if the render is missing.
+    The raw render stays on disk, so the effects can be redone or more variants made without Blender.
+    Variant 0 is the main picture. Variants 1 and up are the same render with other camera luck."""
     raw = root / "raw" / f"{job['jid']}.png"
     if not raw.exists():
         return None
+    stem = job["jid"] if variant == 0 else f"{job['jid']}_v{variant}"
     im = cv2.imread(str(raw), cv2.IMREAD_COLOR)
-    rng = np.random.default_rng(zlib.crc32(job["jid"].encode()))
+    rng = np.random.default_rng(zlib.crc32(stem.encode()))
     bad = job.get("bad")
     force = {}
     if bad == "defocus":
-        force["blur_sigma"] = (3.0, 7.0)
+        force["blur_sigma"] = (5.0, 11.0)
+    if bad == "glare":
+        force["veil"] = (0.25, 0.45)
     if bad in ("glare", "dark"):
         force["skip_ae"] = True
     if bad == "dark":
         force["noise_mult"] = 3.0
     out_max = None
     if job["mode"] == "closeup":
-        out_max = pick(rng if False else random.Random(job["seed"]), CLOSEUP_OUT)
+        out_max = pick(random.Random(job["seed"] + variant), CLOSEUP_OUT)
     img, q, log = phone.apply(im, rng, rainy=job["preset"] in ("rain", "sun_wet"), out_max=out_max, force=force)
-    dst = root / "images" / f"{job['jid']}.jpg"
+    dst = root / "images" / f"{stem}.jpg"
     cv2.imwrite(str(dst), img, [cv2.IMWRITE_JPEG_QUALITY, q])
     meta = json.loads((root / "raw" / f"{job['jid']}.json").read_text())
     meta["phone"] = log
+    meta["variant"] = variant
     (root / "meta").mkdir(exist_ok=True)
-    (root / "meta" / f"{job['jid']}.json").write_text(json.dumps(meta))
-    for f in (raw, root / "raw" / f"{job['jid']}.json", root / "raw" / f"{job['jid']}.png.draft.png"):
-        if f.exists():
-            f.unlink()
+    (root / "meta" / f"{stem}.json").write_text(json.dumps(meta))
+    draft = root / "raw" / f"{job['jid']}.png.draft.png"
+    if draft.exists():
+        draft.unlink()
     h, w = img.shape[:2]
+    grey = cv2.cvtColor(cv2.resize(img, (256, int(256 * h / w))), cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
+    qc = {"luma_mean": round(float(grey.mean()), 3), "luma_std": round(float(grey.std()), 3),
+          "sharp": round(float(cv2.Laplacian(grey, cv2.CV_32F).var() * 1000), 2)}
     row = {c: brow.get(c, "") for c in COLUMNS}
-    row.update(id=job["jid"], image=str(dst.relative_to(ROOT)), source="synthetic", split="train", width=w, height=h,
+    row.update(qc)
+    row.update(id=stem, image=str(dst.relative_to(ROOT)), source="synthetic", split="train", width=w, height=h,
                sha256=hashlib.sha256(dst.read_bytes()).hexdigest(), source_id=job["leaf"], mode=job["mode"],
-               preset=job["preset"], seed=job["seed"], bad=bad or "", expect_unsure=int(bool(bad)))
+               preset=job["preset"], seed=job["seed"], bad=bad or "", expect_unsure=int(bool(bad)), variant=variant)
     if bad:
         row.update(group="unusable", rust="", miner="", phoma="", cercospora="", severity="", predominant="", n_stress="", stratum="")
     return row
@@ -184,6 +196,9 @@ def main():
     ap.add_argument("--chunk", type=int, default=40, help="jobs per Blender start")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--per-kind", type=int, default=30, help="unusable photos per kind")
+    ap.add_argument("--variants", type=int, default=1, help="phone versions to make of each render (1 = the main one only)")
+    ap.add_argument("--post-only", action="store_true", help="do not render; only make the missing phone versions from the raw renders")
+    ap.add_argument("--redo-post", action="store_true", help="with --post-only: delete the finished pictures and make them again")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
@@ -199,7 +214,8 @@ def main():
     jobs = plan_unusable(a.version, a.per_kind, healthy_pool, rows) if a.version == "unusable" else \
         plan(a.version, 0, healthy_pool, rows, les)
     for j in jobs:
-        j["jid"] = f"{a.version[0]}{j['leaf']:04d}_{j.get('bad') or j['mode']}_{j['k']}"
+        prefix = a.version[0] if a.version in ("v1", "unusable") else a.version + "_"  # v1 keeps its short ids
+        j["jid"] = f"{prefix}{j['leaf']:04d}_{j.get('bad') or j['mode']}_{j['k']}"
         j["out"] = str((root / "raw" / f"{j['jid']}.png").relative_to(ROOT))
     (root / "jobs.json").write_text(json.dumps(jobs))
     print(f"{len(jobs)} jobs from {len(rows)} train leaves")
@@ -209,22 +225,56 @@ def main():
     if a.dry_run:
         return
     mpath = root / "manifest.csv"
+    if a.redo_post and mpath.exists():
+        for f in (root / "images").glob("*.jpg"):
+            f.unlink()
+        mpath.unlink()
+    vpath = root / "manifest_variants.csv"  # extra phone versions of a render live apart, so train.py never takes them by mistake
+    if a.redo_post and vpath.exists():
+        vpath.unlink()
     done = {}
-    if mpath.exists():
-        done = {r["id"]: r for r in csv.DictReader(open(mpath))}
-    todo = [j for j in jobs if j["jid"] not in done]
-    if a.limit:
-        todo = todo[:a.limit]
-    print(f"{len(done)} already done, {len(todo)} to render", flush=True)
+    for q in (mpath, vpath):
+        if q.exists():
+            done.update({r["id"]: r for r in csv.DictReader(open(q))})
     log = ROOT / "logs" / f"generate_{a.version}.log"
     log.parent.mkdir(exist_ok=True)
-    chunks = [todo[i:i + a.chunk] for i in range(0, len(todo), a.chunk)]
+    new_file, new_vfile = not mpath.exists(), not vpath.exists()
     t0, n_done = time.time(), 0
-    new_file = not mpath.exists()
-    with open(mpath, "a", newline="") as mf:
+    with open(mpath, "a", newline="") as mf, open(vpath, "a", newline="") as vf:
         w = csv.DictWriter(mf, fieldnames=COLUMNS)
+        wv = csv.DictWriter(vf, fieldnames=COLUMNS)
         if new_file:
             w.writeheader()
+        if new_vfile:
+            wv.writeheader()
+
+        def post(job_list):
+            nonlocal n_done
+            for j in job_list:
+                for v in range(a.variants):
+                    stem = j["jid"] if v == 0 else f"{j['jid']}_v{v}"
+                    if stem in done:
+                        continue
+                    row = finish(j, root, man[str(j["leaf"])], v)
+                    if row:
+                        (w if v == 0 else wv).writerow(row)
+                        done[stem] = row
+                        n_done += 1
+            mf.flush()
+            vf.flush()
+
+        if a.post_only:
+            post(jobs)
+            print(f"post-only: made {n_done} pictures in {(time.time() - t0) / 60:.1f} min -> {mpath}")
+            return
+        todo = [j for j in jobs if not (root / "raw" / f"{j['jid']}.png").exists()]
+        random.Random(12345).shuffle(todo)  # a stopped run is then still a fair random sample of the leaves
+        if a.limit:
+            todo = todo[:a.limit]
+        # a render that exists but whose picture is not finished yet (an earlier run stopped) only needs the post step
+        post([j for j in jobs if (root / "raw" / f"{j['jid']}.png").exists()])
+        print(f"{len(done)} pictures done, {len(todo)} to render", flush=True)
+        chunks = [todo[i:i + a.chunk] for i in range(0, len(todo), a.chunk)]
 
         def work(args):
             i, chunk = args
@@ -232,18 +282,12 @@ def main():
             return chunk, rc
 
         with ThreadPoolExecutor(a.workers) as ex:
-            for chunk, rc in ex.map(work, enumerate(chunks)):
-                for j in chunk:
-                    row = finish(j, root, man[str(j["leaf"])])
-                    if row:
-                        w.writerow(row)
-                        n_done += 1
-                mf.flush()
-                (root / "raw" / f"jobs_{chunks.index(chunk)}.json").unlink(missing_ok=True)
+            for k, (chunk, rc) in enumerate(ex.map(work, enumerate(chunks))):
+                post(chunk)
+                (root / "raw" / f"jobs_{k}.json").unlink(missing_ok=True)
                 el = time.time() - t0
-                print(f"  {len(done) + n_done}/{len(done) + len(todo)} done, {el / max(n_done, 1):.1f} s per image, "
-                      f"blender exit {rc}", flush=True)
-    print(f"finished {n_done} images in {(time.time() - t0) / 60:.1f} min -> {mpath}")
+                print(f"  {len(done)} pictures done, {el / max(n_done, 1):.1f} s per picture, blender exit {rc}", flush=True)
+    print(f"finished: {n_done} new pictures in {(time.time() - t0) / 60:.1f} min -> {mpath}")
 
 
 if __name__ == "__main__":

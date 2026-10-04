@@ -59,18 +59,21 @@
   },
   {
     "id": "synth-field-set",
-    "text": "Step 2b: pick the real field photos used to test the synthetic data",
-    "done": false
+    "text": "Step 2b: download real field photos for testing (Uganda set done, Kenya sample is a stress test only)",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "synth-cut-all",
-    "text": "Step 2c: cut textures for all 1,225 train leaves and check the masks",
-    "done": false
+    "text": "Step 2c: cut textures for the 1,225 train leaves and check the masks (1,221 usable)",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "synth-render-v1",
-    "text": "Step 2d: render synthetic set v1 and check a sample by eye",
-    "done": false
+    "text": "Step 2d: render synthetic set v1 (1,353 photos from 1,221 train leaves) and check a sample by eye",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "step-3",
@@ -140,6 +143,57 @@
   {
     "id": "8c18b25e",
     "text": "Zero-shot baseline scored on BRACOL val and test",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "08c1163e",
+    "text": "RunPod: stop the pod when the runs finish. It bills $1.10 per hour until you do",
+    "done": false
+  },
+  {
+    "id": "0b88a00b",
+    "text": "Step 1 on the pod: real-photo fine-tunes at detail 70, 140 and 280, and the 10, 25, 50 and 100% runs",
+    "done": false
+  },
+  {
+    "id": "zeroshot-three-details",
+    "text": "Zero-shot on the pod at detail 70, 140 and 280: AUC 0.941, 0.928 and 0.948 on the 261 test photos",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "first-finetune-real",
+    "text": "First fine-tune on real photos (detail 140, 1,225 photos): AUC 0.978 and accuracy 92.7%, up from 0.928 and 86.6% zero-shot",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "mac-run-stopped",
+    "text": "Mac fine-tune stopped on purpose at step 60 of 154. All training now runs on the pod",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "field-scoring",
+    "text": "Score the first runs on real field photos: Uganda (300) AUC 0.947 and 89.3% accuracy after fine-tuning, against 0.952 and 80.7% zero-shot. Kenya (197, stress test) is weak: AUC 0.61 and 0.42",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "field-scoring-steps-3-4",
+    "text": "Step 3 and 4 runs score the field photos by themselves (train.py --field). Score the real-only runs too, with scripts/batch_field.sh",
+    "done": false
+  },
+  {
+    "id": "field-is-main-test",
+    "text": "Test design: real field photos (Uganda, Kenya) are the main test for the synthetic arms. BRACOL test is the second check",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "launch-step-3-4",
+    "text": "Steps 3 and 4 launched on the pod: stream a started at 06:34, stream b starts by itself when Step 1 ends. About 2 hours",
     "done": true,
     "doneAt": "2026-10-04"
   }

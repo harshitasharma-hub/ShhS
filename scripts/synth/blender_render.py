@@ -194,7 +194,7 @@ def make_leaf(leaf_id, rng, length, name, wet=0.0, rough=None, tint=(1, 1, 1), g
         p.use_smooth = True
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(obj)
-    rough = rough if rough is not None else U(rng, 0.38, 0.68)
+    rough = rough if rough is not None else U(rng, 0.28, 0.62)
     obj.data.materials.append(make_leaf_material(name + "_mat", tex, mask, rough, wet, rng, tint))
     mk = None
     if want_mask:  # small mask for placing water drops only on the leaf
@@ -572,7 +572,7 @@ def render_job(job):
     sun_dir, winfo = build_world(sc, P["light"], rng)
     leaf_len = U(rng, 0.11, 0.17)
     phone = {"lens": U(rng, 24, 34), "fstop": U(rng, 2.0, 5.6)}
-    defocus = U(rng, 2.5, 4.0) if bad == "defocus" else 1.0
+    defocus = U(rng, 3.0, 5.0) if bad == "defocus" else 1.0
     if bad == "defocus":
         phone["fstop"] = U(rng, 0.8, 1.4)
     leaf = shape = None
@@ -593,7 +593,7 @@ def render_job(job):
         n_drops = int(rng_range(rng, P["drops"]) * (2.5 if mode == "closeup" else 1.0))
         add_drops(rng, leaf, shape, mk, n_drops, wet)
         if mode == "closeup":
-            frame_cm = U(rng, 3.5, 8.0)
+            frame_cm = math.exp(U(rng, math.log(2.8), math.log(8.0)))  # more tight frames, like the field photos
             # a phone cannot focus nearer than about 7 cm, so a tight frame needs a longer lens
             phone["lens"] = min(85.0, max(U(rng, 30, 70), 0.07 * 36.0 / (frame_cm / 100.0)))
             # keep the aim well inside the leaf so the leaf fills the frame, but keep the lesion in view
@@ -657,16 +657,16 @@ def render_job(job):
     # a phone meters the scene, so bring the subject to a mid grey before the real render
     if job.get("auto_exposure", True):
         paper = P["light"] == "studio"
-        target_l = rng_range(rng, (0.78, 0.88) if paper else (0.30, 0.46))
+        target_l = rng_range(rng, (0.78, 0.88) if paper else (0.36, 0.55))
         for _ in range(2):
             luma = measure_luma(sc, job["out"] + ".draft.png", "paper" if paper else "centre")
             if abs(luma - target_l) < 0.03:
                 break
             sc.view_settings.exposure += max(-2.5, min(2.5, 1.9 * math.log2(max(target_l, 0.02) / max(luma, 0.02))))
     if bad == "glare":
-        sc.view_settings.exposure += U(rng, 1.6, 2.6)
+        sc.view_settings.exposure += U(rng, 2.6, 3.6)
     elif bad == "dark":
-        sc.view_settings.exposure -= U(rng, 2.4, 3.6)
+        sc.view_settings.exposure -= U(rng, 3.2, 4.4)
     exposure = sc.view_settings.exposure
     if job.get("save_blend"):
         bpy.ops.file.pack_all()

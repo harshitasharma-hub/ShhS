@@ -16,3 +16,6 @@ data/synthetic/*/raw/
 data/field/*/raw/
 data/field/*/*.zip
 data/diagnostics/
+# Python caches.
+__pycache__/
+*.pyc

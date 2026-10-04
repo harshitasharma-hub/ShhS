@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 MANIFEST = ROOT / "data" / "bracol" / "manifest.csv"
 OUT = ROOT / "data" / "synthetic" / "textures"
 FIELDS = ["id", "w", "h", "angle_deg", "area_frac", "solidity", "touches_border",
-          "n_parts", "mask_ok", "bg_L", "bg_a", "bg_b"]
+          "n_parts", "mask_ok", "attach_px", "bg_L", "bg_a", "bg_b"]
 
 
 def segment(bgr):
@@ -123,7 +123,10 @@ def long_axis_angle(mask):
     return float(ang), mean
 
 
-def cut(leaf_id, src, overlay=False):
+def cut(leaf_id, src, overlay=False, out_dir=None):
+    global OUT
+    if out_dir:
+        OUT = Path(out_dir)
     bgr = cv2.imread(str(src), cv2.IMREAD_COLOR)
     if bgr is None:
         return None
@@ -137,6 +140,16 @@ def cut(leaf_id, src, overlay=False):
     paper = np.median(edge, axis=0).astype(np.float32)
     gains = np.clip(paper.mean() / np.maximum(paper, 1.0), 0.8, 1.25)
     bgr = np.clip(bgr.astype(np.float32) * gains, 0, 255).astype(np.uint8)
+    # Many photos show the leaf's own shadow on beige paper as a tan band along one edge, and the
+    # first outline includes it. Trim tan pixels within 60 px of the outline. Real lesions are
+    # darker or more saturated, so they stay.
+    f = bgr.astype(np.float32)
+    mxp, mnp = f.max(-1), f.min(-1)
+    satp, valp = (mxp - mnp) / np.maximum(mxp, 1.0), mxp / 255.0
+    tan_p = (f[..., 2] > f[..., 1]) & (satp > 0.22) & (satp < 0.44) & (valp > 0.40) & (valp < 0.66)
+    tan_p = ndi.binary_opening(tan_p, structure=np.ones((7, 7)))
+    band_p = mask & ~ndi.binary_erosion(mask, iterations=60)
+    mask = clean(mask & ~(tan_p & band_p), 5, 9)
     area0 = float(mask.sum())
     if area0 < 0.05 * h0 * w0:
         return {"id": leaf_id, "mask_ok": 0, "n_parts": n_parts}
@@ -173,7 +186,17 @@ def cut(leaf_id, src, overlay=False):
     ch, cw = a_c.shape
     area_frac = area / (ch * cw)
     # a plausible leaf is long, fairly solid (wavy leaves are not convex) and does not touch the photo edge
-    ok = int(not touches and solidity > 0.70 and 0.30 < area_frac < 0.90 and cw / ch > 1.5)
+    # a tan blob stuck to the leaf edge is a finger, a clip or paper, not leaf. Count its pixels.
+    rr, gg, bb = (rgb_c[..., i].astype(np.float32) for i in (2, 1, 0))
+    mxc, mnc = np.maximum(np.maximum(rr, gg), bb), np.minimum(np.minimum(rr, gg), bb)
+    satc, valc = (mxc - mnc) / np.maximum(mxc, 1.0), mxc / 255.0
+    tan = (rr > gg) & (satc > 0.22) & (satc < 0.44) & (valc > 0.40) & (valc < 0.66)
+    tan = ndi.binary_opening(tan, structure=np.ones((9, 9)))
+    inside = a_c > 0.5
+    edge_band = inside & ~ndi.binary_erosion(inside, iterations=60)
+    lab_t, n_t = ndi.label(tan & edge_band)
+    attach = int(max(ndi.sum(tan & edge_band, lab_t, range(1, n_t + 1)), default=0)) if n_t else 0
+    ok = int(not touches and solidity > 0.70 and 0.30 < area_frac < 0.90 and cw / ch > 1.5 and attach < 4000)
     if overlay:
         prev = rgb_c.copy()
         edge = (cv2.Canny((a_c > 0.5).astype(np.uint8) * 255, 50, 150) > 0)
@@ -182,7 +205,7 @@ def cut(leaf_id, src, overlay=False):
         cv2.imwrite(str(OUT / f"{leaf_id}_overlay.jpg"), prev, [cv2.IMWRITE_JPEG_QUALITY, 85])
     return {"id": leaf_id, "w": cw, "h": ch, "angle_deg": round(ang, 2),
             "area_frac": round(area_frac, 3), "solidity": round(solidity, 3),
-            "touches_border": int(touches), "n_parts": n_parts, "mask_ok": ok,
+            "touches_border": int(touches), "n_parts": n_parts, "mask_ok": ok, "attach_px": attach,
             "bg_L": round(float(bg[0]), 1), "bg_a": round(float(bg[1]), 1), "bg_b": round(float(bg[2]), 1)}
 
 
@@ -196,7 +219,11 @@ def main():
     ap.add_argument("--ids", nargs="*", type=int, help="cut only these leaf ids")
     ap.add_argument("--overlay", action="store_true", help="also write a mask outline preview")
     ap.add_argument("--jobs", type=int, default=6)
+    ap.add_argument("--out", help="write here instead of data/synthetic/textures (use it for val and test cutouts)")
     a = ap.parse_args()
+    if a.out:
+        global OUT
+        OUT = (ROOT / a.out).resolve()
     rows = list(csv.DictReader(open(MANIFEST)))
     if a.ids:
         rows = [r for r in rows if int(r["id"]) in set(a.ids)]
@@ -204,7 +231,7 @@ def main():
         rows = [r for r in rows if r["split"] == a.split]
     else:
         sys.exit("give --split or --ids")
-    jobs = [(int(r["id"]), ROOT / r["image"], a.overlay) for r in rows]
+    jobs = [(int(r["id"]), ROOT / r["image"], a.overlay, str(OUT)) for r in rows]
     with ProcessPoolExecutor(a.jobs) as ex:
         res = [r for r in ex.map(work, jobs, chunksize=4) if r]
     OUT.mkdir(parents=True, exist_ok=True)

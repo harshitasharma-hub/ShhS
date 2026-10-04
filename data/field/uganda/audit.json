@@ -45,22 +45,22 @@
  ],
  "exact_copies_removed": 1411,
  "near_duplicate_groups_by_threshold": {
-  "2": 1789,
-  "4": 1761,
-  "6": 1714,
-  "8": 1655,
-  "10": 1526,
-  "14": 621
+  "8": 1801,
+  "16": 1798,
+  "24": 1793,
+  "32": 1778,
+  "48": 1732,
+  "64": 1627
  },
- "threshold_used_bits": 6,
- "clusters_with_label_conflict_dropped": 2,
- "kept": 1712,
+ "threshold_used_bits": 24,
+ "clusters_with_label_conflict_dropped": 1,
+ "kept": 1792,
  "kept_by_label": {
-  "healthy": 702,
-  "rust": 582,
-  "phoma": 428
+  "healthy": 737,
+  "rust": 605,
+  "phoma": 450
  },
- "rust": 582,
+ "rust": 605,
  "in_eval": 300,
  "note": "Authors report flips, rotations and brightness changes added to balance classes."
 }

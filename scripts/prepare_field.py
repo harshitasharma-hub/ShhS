@@ -10,7 +10,7 @@
 
 Writes data/field/<set>/{images/, manifest.csv, audit.json, README.md}. The manifest has the same
 columns the scoring code reads from data/bracol/manifest.csv: id, image, rust, group, severity, split.
-Near-duplicates (flips, 90 degree turns, brightness changes) are grouped with a 64 bit image hash,
+Near-duplicates (flips, 90 degree turns, brightness changes) are grouped with a 256 bit image hash,
 and one photo per group is kept. Photos turned by other angles cannot be caught this way.
 """
 import argparse
@@ -33,26 +33,26 @@ ROOT = Path(__file__).resolve().parent.parent
 FIELD = ROOT / "data" / "field"
 FIELDS = ["id", "image", "source", "split", "group", "rust", "severity", "label_name", "width", "height",
           "sha256", "cluster", "cluster_size", "in_eval"]
-NEAR_DUP_BITS = 6  # of 64. Checked by eye on the Uganda set, see audit.json.
+NEAR_DUP_BITS = 24  # of 256. Checked by eye on the Uganda set, see audit.json.
 EVAL_PER_SIDE = 150  # the small balanced set that is scored first
 
 
 def dihedral_hashes(im):
-    """64 bit difference hash of the 8 flips and turns of a photo."""
+    """256 bit difference hash of the 8 flips and turns of a photo. Shape (8, 4) words."""
     out = []
     for flip in (False, True):
         base = im.transpose(Image.FLIP_LEFT_RIGHT) if flip else im
         for k in range(4):
             v = base.rotate(90 * k, expand=True) if k else base
-            g = np.asarray(v.convert("L").resize((9, 8), Image.LANCZOS), dtype=np.int16)
+            g = np.asarray(v.convert("L").resize((17, 16), Image.LANCZOS), dtype=np.int16)
             bits = (g[:, 1:] > g[:, :-1]).flatten()
-            out.append(int.from_bytes(np.packbits(bits).tobytes(), "big"))
-    return out
+            out.append(np.frombuffer(np.packbits(bits).tobytes(), dtype=">u8").astype(np.uint64))
+    return np.stack(out)
 
 
 def cluster(hashes, bits=NEAR_DUP_BITS):
     """Union photos closer than `bits` under any flip or turn. Returns a cluster id per photo."""
-    H = np.array(hashes, dtype=np.uint64)  # (n, 8)
+    H = np.stack(hashes)  # (n, 8, 4)
     n = len(H)
     parent = list(range(n))
 
@@ -62,17 +62,17 @@ def cluster(hashes, bits=NEAR_DUP_BITS):
             a = parent[a]
         return a
 
-    for s in range(0, n, 256):
-        block = H[s:s + 256, 0]
-        d = np.bitwise_count(block[:, None, None] ^ H[None, :, :]).min(axis=2)  # (b, n)
+    for s0 in range(0, n, 48):
+        block = H[s0:s0 + 48, 0, :]  # (b, 4)
+        d = np.bitwise_count(block[:, None, None, :] ^ H[None, :, :, :]).sum(axis=3).min(axis=2)  # (b, n)
         for i, j in zip(*np.nonzero(d <= bits)):
-            i += s
+            i += s0
             if i < j:
                 parent[find(int(j))] = find(int(i))
     return [find(i) for i in range(n)]
 
 
-def sweep(hashes, bits_list=(2, 4, 6, 8, 10, 14)):
+def sweep(hashes, bits_list=(8, 16, 24, 32, 48, 64)):
     return {b: len(set(cluster(hashes, b))) for b in bits_list}
 
 
@@ -186,9 +186,38 @@ def api(url, tries=8):
             time.sleep(min(60, 8 * (k + 1)))
 
 
+KENYA_NOTES = [
+        "Source: JMuBEN and JMuBEN2, Mutira plantation, Kirinyaga county, Kenya, Mendeley Data doi 10.17632/tgv3zb82nd.1 "
+        "and 10.17632/t2r6rszp5c.1, CC BY. Read through the Hugging Face copy Project-AgML/arabica_coffee_leaf_disease_classification "
+        "(CC BY 4.0, 58,549 images). Only a random sample of single rows was fetched, a few MB.",
+        "What it is: Fujifilm X-T4 photos taken on sunny, windy and cloudy days, both leaf sides, cropped to the centre square, "
+        "labelled by a pathologist in the field. In this copy every image is 128x128, so lesions are small.",
+        "What it does not cover: whole plants, hands, phone cameras, and severity (the severity column is empty).",
+        "Known problems: many photos may come from the same leaf, so neighbouring rows were not taken together. "
+        "Near-duplicates under flips and 90 degree turns were removed by image hash.",
+        "Warning: in the Hugging Face copy the colours look shifted. Rust photos are pale and mauve with few orange spots, "
+        "healthy photos are cyan-green, and many photos come in near-copy pairs. Swapping red and blue does not fix it. "
+        "Treat this set as a stress test, not as evidence of field accuracy.",
+        "Use: test only. Never train on it."]
+
+
 def kenya():
     ds = "Project-AgML/arabica_coffee_leaf_disease_classification"
     names = ["Cerscospora", "Healthy", "Leaf_rust", "Miner", "Phoma"]
+    raw = FIELD / "kenya" / "raw"
+    cached = sorted(raw.glob("*.jpg")) if raw.exists() else []
+    if len(cached) >= 200:  # fetched before: do not ask the server again
+        lab = {"Leaf_rust": ("rust", "rust", 1), "Healthy": ("healthy", "healthy", 0), "Miner": ("miner", "other", 0),
+               "Phoma": ("phoma", "other", 0), "Cerscospora": ("cercospora", "other", 0)}
+        rows_c = []
+        for p in cached:
+            k = p.stem.rsplit("_", 1)[0]
+            rows_c.append({"path": str(p), "label_name": lab[k][0], "group": lab[k][1], "rust": lab[k][2]})
+        manifest, audit = build(rows_c, "kenya", "field_kenya", None,
+                                f"Reused {len(cached)} photos fetched earlier from the Hugging Face rows API, random chunks of 100 rows, "
+                                "at most 6 rust and 3 of each other class per chunk.")
+        readme(FIELD / "kenya", "Kenya JMuBEN coffee leaf sample", manifest, audit, KENYA_NOTES)
+        return
     info = json.loads(api(f"https://datasets-server.huggingface.co/size?dataset={ds}"))
     n_rows = info["size"]["dataset"]["num_rows"]
     quota = {"Leaf_rust": 160, "Healthy": 60, "Miner": 40, "Phoma": 40, "Cerscospora": 40}
@@ -221,16 +250,7 @@ def kenya():
     manifest, audit = build(rows_out, "kenya", "field_kenya", None,
                             f"Sampled {sum(len(v) for v in got.values())} rows from {n_rows} using the Hugging Face rows API, "
                             f"from {seen_chunks} random chunks of 100, at most 6 rust and 3 of each other class per chunk.")
-    readme(FIELD / "kenya", "Kenya JMuBEN coffee leaf sample", manifest, audit, [
-        "Source: JMuBEN and JMuBEN2, Mutira plantation, Kirinyaga county, Kenya, Mendeley Data doi 10.17632/tgv3zb82nd.1 "
-        "and 10.17632/t2r6rszp5c.1, CC BY. Read through the Hugging Face copy Project-AgML/arabica_coffee_leaf_disease_classification "
-        "(CC BY 4.0, 58,549 images). Only a random sample of single rows was fetched, a few MB.",
-        "What it is: Fujifilm X-T4 photos taken on sunny, windy and cloudy days, both leaf sides, cropped to the centre square, "
-        "labelled by a pathologist in the field. In this copy every image is 128x128, so lesions are small.",
-        "What it does not cover: whole plants, hands, phone cameras, and severity (the severity column is empty).",
-        "Known problems: many photos may come from the same leaf, so neighbouring rows were not taken together. "
-        "Near-duplicates under flips and 90 degree turns were removed by image hash.",
-        "Use: test only. Never train on it."])
+    readme(FIELD / "kenya", "Kenya JMuBEN coffee leaf sample", manifest, audit, KENYA_NOTES)
 
 
 def readme(out_dir, title, manifest, audit, lines):

@@ -54,7 +54,7 @@ def apply(bgr, rng, rainy=False, level=1.0, out_max=None, force=None):
     # 1. auto exposure: the phone brings the middle of the frame to a mid level, with some error
     c = img[h // 4: 3 * h // 4, w // 4: 3 * w // 4]
     med = float(np.median(0.2126 * c[..., 0] + 0.7152 * c[..., 1] + 0.0722 * c[..., 2]))
-    target = rng.uniform(0.10, 0.22)  # linear, about 0.35 to 0.5 in sRGB
+    target = rng.uniform(0.14, 0.42)  # linear, about 0.41 to 0.68 in sRGB. Real phone shots of a leaf are fairly bright
     gain = float(np.clip(target / max(med, 1e-4), 0.4, 6.0))
     if force.get("skip_ae"):  # glare and dark photos keep the exposure they were rendered with
         gain = 1.0
@@ -68,6 +68,13 @@ def apply(bgr, rng, rainy=False, level=1.0, out_max=None, force=None):
     img = img * np.clip(pull, 0.8, 1.25).astype(np.float32)
     wb = np.array([rng.normal(1.0, 0.03 * level), 1.0, rng.normal(1.0, 0.03 * level)], np.float32)
     img = img * wb
+    # 2b. colour mood. BRACOL leaves are warm and saturated, the Uganda phone photos are cooler and paler.
+    # Widen the range on purpose, so real photos sit inside what the model has seen.
+    if not force.get("skip_ae") and rng.random() < 0.7:
+        t = float(np.clip(rng.normal(-0.05, 0.10), -0.25, 0.16))  # below 0 is cooler
+        tint = float(rng.normal(0.0, 0.03))
+        img = img * np.array([1 + 0.9 * t, 1 + tint, 1 - 0.9 * t], np.float32)
+        log["mood_t"] = round(t, 3)
 
     # 3. soft highlight roll-off, then contrast and saturation like a phone's HDR look
     img = img / (1.0 + 0.25 * img)
@@ -75,8 +82,14 @@ def apply(bgr, rng, rainy=False, level=1.0, out_max=None, force=None):
     contrast = rng.uniform(0.0, 0.35)
     s = s + contrast * (s - 0.5) * (1 - np.abs(2 * s - 1))
     gray = s.mean(2, keepdims=True)
-    sat = rng.uniform(0.92, 1.22)
+    sat = float(np.exp(rng.uniform(np.log(0.45), np.log(1.2)))) if rng.random() < 0.75 else float(rng.uniform(0.92, 1.22))
     s = np.clip(gray + (s - gray) * sat, 0, 1)
+    log["sat"] = round(sat, 2)
+
+    if force.get("veil"):  # glare: light scatters inside the lens and washes the picture out
+        a_v = rng.uniform(*force["veil"])
+        s = s * (1 - a_v) + 0.96 * a_v
+        log["veil"] = round(float(a_v), 2)
 
     # 4. blur: lens softness, hand shake or a missed focus
     r = rng.random()

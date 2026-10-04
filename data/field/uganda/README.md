@@ -9,12 +9,12 @@ Real field photos used only to test the rust yes or no model.
 - Known problems: 100 empty files in the Healthy folder and 2 in the rust folder. The authors added flips, rotations and brightness changes to balance classes. Copies that are flips, 90 degree turns or brightness changes were removed by image hash. Copies turned by other angles may remain.
 - Use: test only. Never train on it.
 
-Photos kept: 1712 (582 rust). Small balanced test set (`in_eval` = 1): 300.
+Photos kept: 1792 (605 rust). Small balanced test set (`in_eval` = 1): 300.
 
 Photos kept by label:
 
-- healthy: 702
-- phoma: 428
-- rust: 582
+- healthy: 737
+- phoma: 450
+- rust: 605
 
 Rebuild: `uv run scripts/prepare_field.py uganda`

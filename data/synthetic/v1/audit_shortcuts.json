@@ -1,0 +1,24 @@
+[
+ {
+  "set": "BRACOL train photos",
+  "n": 1225,
+  "rust": 480,
+  "single_channel_auc": {
+   "L": 0.598,
+   "a": 0.287,
+   "b": 0.468
+  },
+  "cv_logistic_auc": 0.738
+ },
+ {
+  "set": "synthetic v1, whole-leaf scenes",
+  "n": 832,
+  "rust": 382,
+  "single_channel_auc": {
+   "L": 0.46,
+   "a": 0.497,
+   "b": 0.518
+  },
+  "cv_logistic_auc": 0.497
+ }
+]

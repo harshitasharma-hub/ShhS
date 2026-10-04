@@ -4,24 +4,24 @@
  "unreadable_examples": [],
  "exact_copies_removed": 68,
  "near_duplicate_groups_by_threshold": {
-  "2": 197,
-  "4": 195,
-  "6": 193,
-  "8": 188,
-  "10": 182,
-  "14": 136
+  "8": 199,
+  "16": 199,
+  "24": 197,
+  "32": 197,
+  "48": 193,
+  "64": 179
  },
- "threshold_used_bits": 6,
+ "threshold_used_bits": 24,
  "clusters_with_label_conflict_dropped": 0,
- "kept": 193,
+ "kept": 197,
  "kept_by_label": {
-  "cercospora": 28,
+  "cercospora": 29,
   "healthy": 11,
-  "rust": 82,
-  "miner": 36,
+  "rust": 84,
+  "miner": 37,
   "phoma": 36
  },
- "rust": 82,
- "in_eval": 193,
- "note": "Sampled 275 rows from 58549 using the Hugging Face rows API, from 120 random chunks of 100, at most 6 rust and 3 of each other class per chunk."
+ "rust": 84,
+ "in_eval": 197,
+ "note": "Reused 275 photos fetched earlier from the Hugging Face rows API, random chunks of 100 rows, at most 6 rust and 3 of each other class per chunk."
 }
