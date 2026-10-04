@@ -1,0 +1,2 @@
+# Model weights are large. Fetch them with `hf download`, never commit them.
+models/
