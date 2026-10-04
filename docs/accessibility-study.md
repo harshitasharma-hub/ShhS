@@ -191,7 +191,7 @@ Before is the page as it stood at about 15:00 on 4 October. After is the page in
 | First screen | A camera button that failed when no model was connected | A big camera button, four sample leaves, three numbered steps and a spoken instruction | One job per screen (1). A failing main button is worse than none. |
 | Camera | None | A simulated viewfinder, a shutter and a short "looking at the leaf" step. Every simulated screen says "Example only". | The team asked for a presentation of the real flow. The label keeps it true (9). |
 | Answer screen | A number gauge and a green tick for "no rust" | A full-screen colour, a drawn leaf with spots, a person-with-question mark or a plain leaf, big words and a next step that says "one leaf" | Principles 2, 4, 5 |
-| Colours | Orange, green and blue, white text, 5.0 to 7.9:1 | Amber with dark text, forest green and indigo with white text, 7.65 to 9.6:1 | Sunlight (8). Colour-blind distance (see below). |
+| Colours | Orange, green and blue, white text, 5.0 to 7.9:1 | Amber with dark text, forest green and indigo with white text, 7.65 to 9.6:1 | Sunlight (8). Colour-blind distance (see "How we checked"). |
 | Voice | One long clip that played by itself | A clip under one second plays when the answer opens. A longer clip waits for a tap. A visible stop button, a sound switch and a "machine voice" note. | Principle 3 |
 | Person | A sentence | A card with the photo, answer, date, a line in both languages and two questions to ask | Principles 5 and 6 |
 | Helper | None | A "for the helper" section with four steps and a short limits note in Swahili | Principle 6 |
@@ -227,6 +227,30 @@ We decided against these, and why:
 - Dark mode, because the main use is outdoors in daylight.
 - A "this looks wrong" report button, because it needs a backend we do not have.
 - A retake hint on "not sure", because the demo has no real camera to retake with. It belongs in the real app.
+
+### How we checked
+
+Numbers come from three places: `tools/check.mjs` run against the live page on 4 October 2026 (55 of 55 checks pass), Lighthouse 12.8.2 in mobile mode, and `tools/colour_check.py`. Before is the page as it stood at about 15:00.
+
+| Measure | Before | After |
+| --- | --- | --- |
+| Lighthouse mobile: accessibility, best practices, SEO | 100, 96, 100. One console error: the page had no favicon. | 100, 100, 100. No failing audit. |
+| Lowest text contrast on any screen | 4.49:1, the "saved answer" line on the orange screen. That is below the 4.5:1 limit. | 7.44:1 |
+| Text on the answer screens (rust, no rust, not sure) | 5.00:1, 6.47:1, 7.86:1 | 7.65:1, 9.11:1, 9.60:1 |
+| Border of the picture frame | 2.0:1, below the 3:1 limit for controls | The frame is gone. The dashed note border is 4.6:1 or more. |
+| Smallest distance between two answer screens, as seen with protanopia (simulated, CIE76) | 27.8, rust against no rust | 56.1 |
+| The same with deuteranopia | 44.0 | 61.4 |
+| The same with tritanopia | 14.0 | 14.4, green against indigo. This is the one weak pair. The words, the drawing and the voice still differ. |
+| Smallest control | not measured | 48 by 48 CSS pixels or more on every screen |
+| Layout at 320 and 360 pixels wide | not measured | No sideways scroll and no clipped text on all six screens. Text spacing overrides and double-size text break nothing. |
+| First visit, over the network | About 650 KB if the voice plays: page 26 KB, photos 28 KB and three WAV clips of about 200 KB. | 164 KB for everything, voice included (text compressed). The research budget was 160 KB, so we are 2.5% over. |
+| Offline | No | After one visit, the home screen, camera, answer and all seven voice clips work with no connection |
+| Scripts off | An almost empty page | A plain page with the four answers, the photos and links to the sound |
+| Back button | Left the site | Answer, then camera, then the list. Every answer has its own link. |
+| Sound that starts by itself | One clip of about 7 seconds | Nothing on load. A clip under 1 second after a tap. |
+| Time from the shutter to the answer in the simulation | Not applicable | 1.6 seconds |
+
+Two limits. These checks run in desktop Chrome with a phone-size screen, so they say nothing about a low-end phone, a real sun or a real screen reader. And a perfect Lighthouse score only means no automated rule failed. It does not mean a first-time user can use the page.
 
 ## 8. What we did not do, and what comes next
 
@@ -381,4 +405,4 @@ node check.mjs http://localhost:5294/        # or the live address
 node shots.mjs <before-url> <after-url> ../../../docs/accessibility-study
 ```
 
-`check.mjs` runs 55 checks in a real Chrome: load and weight, reflow at 320 and 360 pixels, target size, contrast, keyboard focus, the camera flow, the back button, language, reduced motion, forced colours, text spacing, double-size text, audio length, a no-script page and offline use. `python3 presentation/demo/tools/build.py` rebuilds the page from `src/strings.json`.
+`colour_check.py` prints the colour numbers. `check.mjs` runs 55 checks in a real Chrome: load and weight, reflow at 320 and 360 pixels, target size, contrast, keyboard focus, the camera flow, the back button, language, reduced motion, forced colours, text spacing, double-size text, audio length, a no-script page and offline use. `python3 presentation/demo/tools/build.py` rebuilds the page from `src/strings.json`.
