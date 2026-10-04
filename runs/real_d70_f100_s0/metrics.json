@@ -1,0 +1,89 @@
+{
+ "name": "real_d70_f100_s0",
+ "detail": 70,
+ "epochs": 3,
+ "lr": 0.0001,
+ "rank": 16,
+ "batch_size": 4,
+ "grad_accum": 4,
+ "fraction": 100,
+ "seed": 0,
+ "train_photos": 1225,
+ "synthetic_manifest": null,
+ "synthetic_photos": 0,
+ "device": "cuda",
+ "torch": "2.14.1+cu126",
+ "train_seconds": 665.5718314629048,
+ "threshold_from_val": 1.125,
+ "val": {
+  "n": 261,
+  "auc": 0.984430879269947,
+  "accuracy": 0.9616858237547893,
+  "sensitivity": 0.9313725490196079,
+  "specificity": 0.9811320754716981,
+  "precision": 0.9693877551020408,
+  "f1": 0.95
+ },
+ "test": {
+  "n": 261,
+  "auc": 0.986434825502528,
+  "accuracy": 0.9425287356321839,
+  "sensitivity": 0.9019607843137255,
+  "specificity": 0.9685534591194969,
+  "precision": 0.9484536082474226,
+  "f1": 0.9246231155778895,
+  "auc_ci95": [
+   0.974684883928957,
+   0.9945631375566166
+  ],
+  "accuracy_ci95": [
+   0.9117816091954023,
+   0.9693486590038314
+  ],
+  "by_group": {
+   "rust": {
+    "n": 102,
+    "correct": 0.9019607843137255
+   },
+   "healthy": {
+    "n": 41,
+    "correct": 0.975609756097561
+   },
+   "other": {
+    "n": 118,
+    "correct": 0.9661016949152542
+   }
+  },
+  "rust_sensitivity_by_severity": {
+   "1": {
+    "n": 62,
+    "sensitivity": 0.8548387096774194
+   },
+   "2": {
+    "n": 26,
+    "sensitivity": 0.9615384615384616
+   },
+   "3": {
+    "n": 5,
+    "sensitivity": 1.0
+   },
+   "4": {
+    "n": 9,
+    "sensitivity": 1.0
+   }
+  }
+ },
+ "not_sure": {
+  "target_accuracy": 0.95,
+  "margin_from_val": 0.0,
+  "val": {
+   "coverage": 1.0,
+   "accuracy_answered": 0.9616858237547893
+  },
+  "test": {
+   "coverage": 1.0,
+   "accuracy_answered": 0.9425287356321839
+  }
+ },
+ "scoring_seconds": 302.771975774318
+}

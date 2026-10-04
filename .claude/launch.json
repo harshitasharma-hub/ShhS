@@ -4,8 +4,22 @@
     {
       "name": "checklist",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["checklist/server.py"],
+      "runtimeArgs": [
+        "checklist/server.py"
+      ],
       "port": 8765
+    },
+    {
+      "name": "presentation-v2",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5280",
+        "--directory",
+        "presentation-v2"
+      ],
+      "port": 5280
     }
   ]
 }

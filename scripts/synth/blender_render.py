@@ -166,9 +166,10 @@ def make_leaf_material(name, tex, mask, rough, wet, rng, tint=(1, 1, 1)):
     return mat
 
 
-def make_leaf(leaf_id, rng, length, name, wet=0.0, rough=None, tint=(1, 1, 1), grid=(140, 56), want_mask=True):
-    tex = load_image(os.path.join(TEX_DIR, f"{leaf_id}.jpg"))
-    mask = load_image(os.path.join(TEX_DIR, f"{leaf_id}_mask.png"), noncolor=True)
+def make_leaf(leaf_id, rng, length, name, wet=0.0, rough=None, tint=(1, 1, 1), grid=(140, 56), want_mask=True, tex_dir=None):
+    folder = tex_dir or TEX_DIR  # a job can point to another texture folder, for example the rim-painted ones
+    tex = load_image(os.path.join(folder, f"{leaf_id}.jpg"))
+    mask = load_image(os.path.join(folder, f"{leaf_id}_mask.png"), noncolor=True)
     w_px, h_px = tex.size
     width = length * h_px / w_px
     shape = LeafShape(rng, length, width)
@@ -583,7 +584,7 @@ def render_job(job):
     tilt_cam = rng_range(rng, P["cam_tilt"])
 
     if mode != "none":
-        leaf, shape, mk = make_leaf(job["leaf"], rng, leaf_len, "leaf", wet=wet)
+        leaf, shape, mk = make_leaf(job.get("tex_id", job["leaf"]), rng, leaf_len, "leaf", wet=wet, tex_dir=job.get("tex_dir"))
         studio = P["light"] == "studio"
         spread = 6 if mode == "closeup" else (3 if studio else 9)
         yaw_sd = 8 if studio else 24
@@ -593,12 +594,14 @@ def render_job(job):
         n_drops = int(rng_range(rng, P["drops"]) * (2.5 if mode == "closeup" else 1.0))
         add_drops(rng, leaf, shape, mk, n_drops, wet)
         if mode == "closeup":
-            frame_cm = math.exp(U(rng, math.log(2.8), math.log(8.0)))  # more tight frames, like the field photos
+            frame_cm = job.get("frame_cm") or math.exp(U(rng, math.log(2.8), math.log(8.0)))  # tight frames, like the field photos
             # a phone cannot focus nearer than about 7 cm, so a tight frame needs a longer lens
-            phone["lens"] = min(85.0, max(U(rng, 30, 70), 0.07 * 36.0 / (frame_cm / 100.0)))
-            # keep the aim well inside the leaf so the leaf fills the frame, but keep the lesion in view
-            au = min(0.88, max(0.12, aim[0]))
-            av = min(0.72, max(0.28, aim[1]))
+            phone["lens"] = min(job.get("lens_cap", 85.0), max(U(rng, 30, 70), 0.07 * 36.0 / (frame_cm / 100.0)))
+            # keep the aim well inside the leaf so the leaf fills the frame, but keep the lesion in view.
+            # "loose_aim" lets the camera look at a lesion near the leaf edge.
+            lo_u, hi_u, lo_v, hi_v = (0.04, 0.96, 0.08, 0.92) if job.get("loose_aim") else (0.12, 0.88, 0.28, 0.72)
+            au = min(hi_u, max(lo_u, aim[0]))
+            av = min(hi_v, max(lo_v, aim[1]))
             tgt, nrm = surface_point(leaf, shape, au, av)
             dist = place_camera_closeup(sc, rng, tgt, nrm, frame_cm / 100.0, phone, U(rng, 0, 28), defocus)
         else:

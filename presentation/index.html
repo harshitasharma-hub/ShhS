@@ -42,10 +42,17 @@
     <!-- Real photo against render. Clipped by the same seam as the two layers above. Filled by showcaseScene.js. -->
     <div class="reveal" id="reveal"></div>
 
+    <!-- The frame of the leaf lab viewfinder. It sits behind the canvas, which is cut to the same rounded rectangle. -->
+    <div class="labframe" id="labFrame" aria-hidden="true"></div>
+
     <canvas id="gl" aria-hidden="true"></canvas>
 
     <!-- The labeled renders. Filled by showcaseScene.js. -->
     <div class="gallery" id="gallery" role="group" aria-label="Rendered leaves and their labels"></div>
+
+    <!-- The leaf lab: what sits on the viewfinder (chip, caption, phone effects, label stamp) and the column beside it
+         (readouts, sliders, the real Blender render). Filled by labScene.js. -->
+    <div class="lab" id="lab"></div>
 
     <div class="tags" id="tags" aria-hidden="true"></div>
 
@@ -62,10 +69,11 @@
       <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#151834"/><path d="M16 25V13M16 13c0-5 4-8 9-8 0 5-3 8-9 8ZM16 17c0-4-3-6-8-6 0 4 3 6 8 6Z" fill="none" stroke="#19B3C8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span class="brand__name" translate="no">ShhS</span>
     </a>
+    <nav class="rail" id="rail" aria-label="Chapters">
+      <ol class="rail__chapters" id="railChapters"></ol>
+    </nav>
     <div class="hud__right">
-      <span class="hud__chapter" id="hudChapter">Open</span>
-      <button class="btn-ghost" id="btnNotes" type="button" aria-pressed="false" title="Speaker notes (N)"><kbd>N</kbd> Notes</button>
-      <button class="btn-ghost" id="btnKeys" type="button" aria-pressed="false" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)"><kbd>?</kbd></button>
+      <span class="hud__paused" role="status">Motion paused</span>
       <button class="btn-ghost" id="btnFull" type="button" title="Full screen (F)"><kbd>F</kbd> Full screen</button>
     </div>
   </header>
@@ -83,6 +91,7 @@
       <div><dt><kbd>&rarr;</kbd> <kbd>Space</kbd></dt><dd>Next step</dd></div>
       <div><dt><kbd>&larr;</kbd></dt><dd>Previous step</dd></div>
       <div><dt>Scroll</dt><dd>Next or previous step</dd></div>
+      <div><dt>Click a chapter</dt><dd>Jump to its first step</dd></div>
       <div><dt><kbd>S</kbd></dt><dd>Flip photo and labels</dd></div>
       <div><dt><kbd>N</kbd></dt><dd>Speaker notes</dd></div>
       <div><dt><kbd>F</kbd></dt><dd>Full screen</dd></div>
@@ -90,10 +99,6 @@
       <div><dt><kbd>Q</kbd></dt><dd>Lite mode for slow laptops</dd></div>
     </dl>
   </aside>
-
-  <nav class="rail" id="rail" aria-label="Talk progress">
-    <ol class="rail__chapters" id="railChapters"></ol>
-  </nav>
 
   <div class="preloader" id="preloader" role="status">
     <div class="preloader__mark">

@@ -1,0 +1,17 @@
+{
+ "name": "real_d140_f10_s0",
+ "detail": 140,
+ "epochs": 3,
+ "lr": 0.0001,
+ "rank": 16,
+ "batch_size": 4,
+ "grad_accum": 4,
+ "fraction": 10,
+ "seed": 0,
+ "train_photos": 128,
+ "synthetic_manifest": null,
+ "synthetic_photos": 0,
+ "device": "cuda",
+ "torch": "2.14.1+cu126",
+ "train_seconds": 49.310289269313216
+}

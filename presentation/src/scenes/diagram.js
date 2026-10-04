@@ -12,6 +12,9 @@ export const COL = {
 };
 
 // ---------------------------------------------------------------- card art
+// Graphics settings the app fills in once the renderer exists. Textures read them when they are made.
+export const GFX = { aniso: 8 };
+
 const W = 256, H = 320;
 const cache = new Map();
 
@@ -169,7 +172,7 @@ export function cardTexture(kind, variant = 0, frame = null, tag = null) {
   if (texCache.has(key)) return texCache.get(key);
   const t = new THREE.CanvasTexture(cardCanvas(kind, variant, frame, tag));
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
+  t.anisotropy = GFX.aniso;
   texCache.set(key, t);
   return t;
 }
@@ -221,7 +224,7 @@ export function imageCardTexture(name, frame = null, tag = null, aspect = 2) {
   c.width = LW; c.height = LH;
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
+  t.anisotropy = GFX.aniso;
   const paint = (img) => {
     const ctx = c.getContext('2d');
     ctx.clearRect(0, 0, LW, LH);
@@ -253,7 +256,7 @@ export function makeImageCard(name, frame = null, tag = null, scale = 1, aspect 
 export function imageTexture(name) {
   const t = new THREE.Texture();
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
+  t.anisotropy = GFX.aniso;
   whenLoaded(name, (img) => { t.image = img; t.needsUpdate = true; });
   return t;
 }
@@ -338,14 +341,26 @@ export function studioLights(group, size = 140) {
   sun.shadow.mapSize.set(2048, 2048);
   const s = sun.shadow.camera;
   s.left = -size; s.right = size; s.top = size * 0.7; s.bottom = -size * 0.7; s.near = 10; s.far = 260;
-  sun.shadow.bias = -0.0004;
-  sun.shadow.radius = 5;
+  sun.shadow.bias = -0.0003;
+  sun.shadow.normalBias = 0.05;      // pushes the lookup off the surface, so thin boards do not shimmer
+  sun.shadow.radius = 3;
   sun.target.position.set(40, 0, 0);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(size * 4, size * 4), new THREE.ShadowMaterial({ opacity: 0.2, color: 0x2a2f66 }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   group.add(hemi, sun, sun.target, floor);
   return { hemi, sun, floor };
+}
+
+// Make the shadow map cover only what a scene needs. The same texture then spreads over a much smaller area,
+// so edges are sharper and steadier. cx is where the scene is centred on the x axis, halfW and halfH are the
+// half sizes of the box in the light's own view. The light keeps the same direction.
+export function fitShadow(rig, cx, halfW, halfH) {
+  const { sun } = rig, s = sun.shadow.camera;
+  sun.target.position.set(cx, 0, 0);
+  sun.position.set(cx - 74, 70, 46);
+  s.left = -halfW; s.right = halfW; s.top = halfH; s.bottom = -halfH;
+  s.updateProjectionMatrix();
 }
 
 export { RoundedBoxGeometry, range };

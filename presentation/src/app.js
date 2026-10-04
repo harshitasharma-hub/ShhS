@@ -4,10 +4,12 @@ import { U, setEnv, updateEnv } from './core/env.js';
 import { Seam } from './core/seam.js';
 import { CameraRig } from './core/camera.js';
 import { Tags } from './core/tags.js';
+import { Layout } from './core/layout.js';
 import { Panels } from './ui/panels.js';
 import { Rail } from './ui/rail.js';
 import { Input } from './ui/input.js';
 import { BaseScene } from './scenes/baseScene.js';
+import { GFX } from './scenes/diagram.js';
 import { FarmScene } from './scenes/farmScene.js';
 import { clamp } from './core/math.js';
 
@@ -28,15 +30,16 @@ export class App {
     this.sceneClasses = sceneClasses;
     this.swapTimer = 0;
     this.active = null;
-    this.perf = { acc: 0, n: 0, skip: 90, slow: 0 };
+    this.perf = { acc: 0, n: 0, skip: 90, slow: 0, hold: 0 };
     this.lite = false;
     this.paused = false;
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const qs = new URLSearchParams(location.search);
-    this.maxDpr = Math.min(window.devicePixelRatio || 1, parseFloat(qs.get('dpr') || '1.5'));
+    this.maxDpr = Math.min(window.devicePixelRatio || 1, parseFloat(qs.get('dpr') || '2'));
     this.dpr = this.maxDpr;
     this.aa = qs.get('aa') !== '0';
     this.forceNoGL = qs.get('nogl') === '1'; // test hook for the plain-text fallback
+    if (qs.get('debug') === '1') document.documentElement.classList.add('debug-stage');   // outlines the stage each step is fitted to
   }
 
   // ------------------------------------------------------------------ boot
@@ -57,21 +60,24 @@ export class App {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    GFX.aniso = this.renderer.capabilities.getMaxAnisotropy();   // the sharpest photo filtering this GPU offers
     this.quality = window.innerWidth < 800 ? 0.7 : 1;
     this.scene3d = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.5, 5000);
     this.rig = new CameraRig(this.camera);
     this.seam = new Seam(document.getElementById('seam'));
     this.tags = new Tags(document.getElementById('tags'), this.camera);
+    this.layout = new Layout(this);
     setEnv('dawn', true);
     this.resize();
-    window.addEventListener('resize', () => this.resize());
+    // a new window size changes the free part of the screen, so the step is framed again
+    window.addEventListener('resize', () => { this.resize(); clearTimeout(this._relayout); this._relayout = setTimeout(() => this.refreshLayout(), 90); });
     window.addEventListener('pointermove', (e) => {
       this.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
       this.pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
     }, { passive: true });
 
-    this.rail = new Rail();
+    this.rail = new Rail((i) => this.go(i));
     this.input = new Input(this);
     this._chrome();
 
@@ -102,6 +108,7 @@ export class App {
     this.go(start, { instant: true });
     await nextFrame();
     document.body.classList.add('is-ready');
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.refreshLayout());
     if (start === 0) this.seam.go(0.5, { mode: 'follow' });
     this._keepAwake();
 
@@ -131,8 +138,6 @@ export class App {
   }
 
   _chrome() {
-    document.getElementById('btnNotes').addEventListener('click', () => this.toggleNotes());
-    document.getElementById('btnKeys').addEventListener('click', () => this.toggleKeys());
     document.getElementById('btnFull').addEventListener('click', () => this.fullscreen());
     document.getElementById('brand').addEventListener('click', (e) => { e.preventDefault(); this.go(0); });
   }
@@ -144,6 +149,7 @@ export class App {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    this.rig.setViewport(w, h);
     const v = new THREE.Vector2();
     this.renderer.getDrawingBufferSize(v);
     U.uRes.value.copy(v);
@@ -155,14 +161,15 @@ export class App {
   // Keep the frame rate up on weaker machines by trading resolution, never effects.
   _perf(dt) {
     const p = this.perf;
+    if (p.hold > 0) p.hold--;
     if (p.skip > 0) { p.skip--; return; }
     p.acc += dt; p.n++;
     if (p.n < 80) return;
     const avg = p.acc / p.n;
     p.acc = 0; p.n = 0;
-    if (avg > 0.024 && this.dpr > 1.0) { this.dpr = Math.max(1.0, this.dpr - 0.15); this.resize(); p.skip = 40; p.slow = 0; }
+    if (avg > 0.024 && this.dpr > 1.0) { this.dpr = Math.max(1.0, this.dpr - 0.15); this.resize(); p.skip = 40; p.slow = 0; p.hold = 1200; }   // after a drop, wait before going up again, so the picture does not pump
     else if (avg > 0.034 && this.dpr <= 1.0 && !this.lite) { if (++p.slow >= 2) this.setLite(true); }
-    else if (avg < 0.0135 && this.dpr < this.maxDpr && !this.lite) { this.dpr = Math.min(this.maxDpr, this.dpr + 0.1); this.resize(); p.skip = 40; p.slow = 0; }
+    else if (avg < 0.0135 && this.dpr < this.maxDpr && !this.lite && p.hold <= 0) { this.dpr = Math.min(this.maxDpr, this.dpr + 0.1); this.resize(); p.skip = 40; p.slow = 0; }
     else p.slow = 0;
   }
 
@@ -201,6 +208,7 @@ export class App {
     this.tags.clear();
 
     const scene = this.scenes[beat.scene];
+    const stage = this.layout.apply(i);        // the free part of the screen for this step; scenes frame themselves into it
     const pose = scene.pose(beat.id);
     const swap = () => {
       if (this.active && this.active !== scene) { this.active.group.visible = false; this.active.leave(); }
@@ -213,20 +221,31 @@ export class App {
     const sceneChanged = !prev || prev.scene !== beat.scene || this.active !== scene;
     if (instant) {
       swap();
+      this.rig.setStage(stage, true);
       this.rig.jumpTo(pose);
     } else if (sceneChanged) {
       this.canvas.classList.add('is-fading');
       this.swapTimer = setTimeout(() => {
         swap();
+        this.rig.setStage(stage, true);
         this.rig.jumpTo(this._pulled(pose, 0.16));
         this.rig.flyTo(pose, 1.9);
         this.canvas.classList.remove('is-fading');
       }, 300);
     } else {
       swap();
+      this.rig.setStage(stage, false);
       const dist = this.rig.pos.distanceTo(new THREE.Vector3().fromArray(pose.pos));
       this.rig.flyTo(pose, clamp(1.2 + dist / 90, 1.3, 2.4));
     }
+  }
+
+  // The window changed size, or the fonts arrived and the text wrapped differently: measure the free part of the screen again.
+  refreshLayout() {
+    if (this.index < 0 || !this.active) return;
+    const stage = this.layout.apply(this.index);
+    this.rig.setStage(stage, true);
+    this.rig.jumpTo(this.active.pose(BEATS[this.index].id));
   }
 
   _pulled(pose, k) {
@@ -245,22 +264,21 @@ export class App {
       case 'sources': this.panels.openSheet(); break;
       case 'closeSheet': this.panels.closeSheet(); break;
       case 'closeOverlays':
-        document.getElementById('notes').hidden = true; document.getElementById('btnNotes').setAttribute('aria-pressed', 'false');
-        document.getElementById('keys').hidden = true; document.getElementById('btnKeys').setAttribute('aria-pressed', 'false');
+        document.getElementById('notes').hidden = true;
+        document.getElementById('keys').hidden = true;
         break;
       default: break;
     }
   }
 
+  // The notes and the key list have no button on screen. Press N and ? to open them.
   toggleNotes() {
     const n = document.getElementById('notes');
     n.hidden = !n.hidden;
-    document.getElementById('btnNotes').setAttribute('aria-pressed', String(!n.hidden));
   }
   toggleKeys() {
     const n = document.getElementById('keys');
     n.hidden = !n.hidden;
-    document.getElementById('btnKeys').setAttribute('aria-pressed', String(!n.hidden));
   }
   fullscreen() {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});

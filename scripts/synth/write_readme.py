@@ -70,6 +70,9 @@ def main():
         ["`v1/`", f"{n} training photos made from {leaves} train leaves. `images/`, `meta/` (the render settings of each photo) and `manifest.csv`."],
         *([["`v2/`", f"{len(rows(SYN / 'v2' / 'manifest.csv'))} more training photos from the same leaves, made with the same recipe and new random seeds. Same format as v1."]]
           if (SYN / "v2" / "manifest.csv").exists() else []),
+        *([["`v3/`", f"{len(rows(SYN / 'v3' / 'manifest.csv'))} training photos, a complete replacement for v1. The healthy and rust photos are copied from v1 unchanged. "
+                     "The other-disease leaves are new hard negatives with a yellow, golden or orange rim around the dark lesions. See below."]]
+          if (SYN / "v3" / "manifest.csv").exists() else []),
         ["`unusable/`", f"{len(bad)} photos that no model should judge. For testing the 'not sure' answer only. Never train on them."],
         ["`textures/`", f"The leaf cut-outs the renders use: {len(ok)} of {len(tex)} train leaves passed the mask checks. Rebuild them with the scripts below."],
         ["`probe*`", "Early test renders. They are not part of any experiment."],
@@ -102,6 +105,22 @@ def main():
     w("")
     w("`generate.py` plans and runs all of this. The same seed gives the same photo.")
     w("")
+    if (SYN / "v3" / "manifest.csv").exists():
+        v3 = rows(SYN / "v3" / "manifest.csv")
+        new3 = [r for r in v3 if r["id"].startswith("v3_")]
+        w("## v3: orange is not always rust")
+        w("")
+        w("A model trained on v1 called other-disease leaves 'rust' on real Uganda photos. In v1, orange shows up almost only on rust leaves, "
+          "so the model learned that orange means rust. Real phoma and cercospora photos have big dark lesions with a yellow or orange rim.")
+        w("")
+        w(f"v3 fixes that. It has {len(v3)} photos, the same size as v1. {len(v3) - len(new3)} are copied from v1 unchanged, including every rust close-up. "
+          f"{len(new3)} are new renders of leaves with another disease and no rust. `add_rims.py` finds the brown lesions in the real texture "
+          "and paints a soft yellow, golden or orange rim around them, in Lab colour so the veins still show. White holes inside a lesion are filled with dead brown tissue. "
+          "Most of the new photos are close-ups aimed at a big lesion, framed tight so the lesion and its rim fill much of the picture. "
+          "The label stays 'no rust' because the source leaf has no rust.")
+        w("")
+        w("Rust leaves are never painted. A close-up of a painted rust leaf could show a rimmed lesion and no rust, and the label would be wrong.")
+        w("")
     w("## How to use them")
     w("")
     w("Training: pass `data/synthetic/v1/manifest.csv` to `scripts/train.py --synthetic-manifest`. It has the same columns as `data/bracol/manifest.csv`, "

@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Does this leaf have rust?</title>
+<meta name="description" content="A small AI for a farmer's phone looks at a coffee leaf photo and answers: rust, no rust, or not sure. Trained on real photos and on practice photos made in 3D, tested on real farm photos.">
+<meta name="theme-color" content="#E8EDE3">
+<meta name="color-scheme" content="light">
+<link rel="preload" href="fonts/bigshoulders.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A2724'/%3E%3Cpath d='M7 25C7 14 14 7 26 6C26 18 19 25 7 25Z' fill='%235AD08B'/%3E%3Ccircle cx='17' cy='15' r='2.6' fill='%23FF8A2B'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5L19.5 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cross" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-spots" viewBox="0 0 24 24"><circle cx="8" cy="9" r="3" fill="currentColor"/><circle cx="16" cy="8" r="2.2" fill="currentColor"/><circle cx="13" cy="16" r="3.2" fill="currentColor"/></symbol>
+    <symbol id="i-ask" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M5 20c.7-4.2 3.6-6.2 7-6.2s6.3 2 7 6.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<header class="bar">
+  <a class="bar__brand" href="#top" aria-label="ShhS, back to the top"><b translate="no">ShhS</b></a>
+  <nav class="bar__nav" aria-label="Page sections">
+    <a href="#summary">Short version</a>
+    <a href="#problem">Problem</a>
+    <a href="#solution">Solution</a>
+    <a href="#results">Results</a>
+    <a href="#next">What is next</a>
+  </nav>
+  <div class="bar__tools">
+    <button type="button" class="btn-mini" id="btn-words" aria-expanded="false" aria-controls="words-drawer">Words</button>
+    <button type="button" class="btn-mini" id="btn-pending" aria-expanded="false" aria-controls="pending-drawer">To do <b id="pending-count">0</b></button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="hero__text">
+    <p class="label">Small AI for coffee farmers</p>
+    <h1 class="h-hero" id="hero-title">Does this coffee leaf have rust?</h1>
+    <p class="lede">ShhS is a small AI that looks at a photo of a coffee leaf and answers: rust, no rust, or not sure. We taught it with real photos and with practice photos made in 3D. Then we tested it on real photos from farms.</p>
+    <dl class="facts">
+      <div><dt>Made for</dt><dd>A farmer's phone, to work without internet</dd></div>
+      <div><dt>Tested on</dt><dd><span data-bind="n.uganda.kept">1,792</span> real photos from Ugandan farms</dd></div>
+      <div><dt>The AI</dt><dd>Gemma 4 E2B, an open model from Google DeepMind</dd></div>
+    </dl>
+    <div class="hero__cta">
+      <a class="btn" href="#summary"><span>Read the short version</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      <a class="btn btn--ghost" href="#results"><span>Go to the results</span></a>
+    </div>
+  </div>
+
+  <figure class="live card" id="vf" aria-label="A real result from our model">
+    <p class="label">A real result</p>
+    <div class="live__photo"><img id="vf-img" alt="A coffee leaf photographed for the reading" width="1200" height="600" decoding="async" fetchpriority="high"></div>
+    <div class="result" id="vf-result" data-verdict="" role="status" aria-live="polite">
+      <span class="result__icon"><svg aria-hidden="true"><use href="#i-spots"/></svg></span>
+      <div class="result__body"><b class="result__word">Rust found</b><span class="result__sub" id="vf-sub"></span></div>
+    </div>
+    <p class="live__truth" id="vf-truth" aria-live="polite"></p>
+    <div class="live__nav">
+      <ul class="thumbs" id="vf-thumbs" aria-label="Pick a leaf"></ul>
+      <button type="button" class="btn btn--ghost btn--small" id="vf-auto" aria-pressed="false" aria-label="Pause the automatic change of leaf"><span>Pause</span></button>
+      <button type="button" class="btn btn--small" id="vf-next"><span>Next leaf</span><svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+    </div>
+    <figcaption class="note" id="vf-note">The answer of our "both together" version on a clean test photo it never saw. It is not always right. Try the next leaves.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ SHORT VERSION ============ -->
+<section class="sec sec--paper" id="summary" aria-labelledby="summary-title">
+  <div class="wrap">
+    <h2 class="h-chapter" id="summary-title">The short version</h2>
+    <p class="lede lede--wide">We asked one question: <b>do practice photos made in 3D help a small AI find rust on real farm photos?</b> This is what we did, what we found, and what comes next.</p>
+
+    <ol class="flow" aria-label="What we did">
+      <li><figure><img src="img/pipeline/897_original.webp" alt="A real photo of a coffee leaf with rust" width="400" height="200" loading="lazy" decoding="async"></figure><h3>Real leaf photos</h3><p><span data-bind="n.bracol.train">1,225</span> labelled photos of coffee leaves, on plain paper.</p></li>
+      <li><figure><img src="img/dial/897_overcast_phone.webp" alt="A practice photo: the same leaf rendered in 3D in a field scene" width="400" height="200" loading="lazy" decoding="async"></figure><h3>Practice photos in 3D</h3><p>We bend each real leaf in 3D and place it in light, weather and clutter. It keeps its label.</p></li>
+      <li><figure class="flow__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="19" y="6" width="26" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="50" r="2.6" fill="currentColor"/><path d="M26 30c0-7 5-12 13-13 0 8-5 13-13 13Z" fill="currentColor" opacity=".35"/><circle cx="33" cy="26" r="2" fill="var(--rust)"/></svg></figure><h3>Teach the small AI</h3><p>It learns to answer rust, no rust, or not sure. We try four ways of teaching it, then two fixes.</p></li>
+      <li><figure><img src="img/verdict/u_fi_01243.webp" alt="A real phone photo of a coffee leaf with rust, taken on a farm in Uganda" width="200" height="200" loading="lazy" decoding="async"></figure><h3>Test on real farm photos</h3><p><span data-bind="n.uganda.kept">1,792</span> photos from Ugandan farms that the AI never saw.</p></li>
+    </ol>
+
+    <div class="found" id="found">
+      <h3 class="h-section">What we found</h3>
+      <ol class="found__list" id="found-list"></ol>
+    </div>
+
+    <div class="read card" id="how-to-read">
+      <h3 class="h-card">How to read this page</h3>
+      <ul class="legend-key">
+        <li><i class="dot dot--rust"></i><span><b>Orange</b> means rust.</span></li>
+        <li><i class="dot dot--leaf"></i><span><b>Green</b> means no rust.</span></li>
+        <li><i class="dot dot--render"></i><span><b>Blue</b> means made in 3D, or taught with photos made in 3D.</span></li>
+        <li><i class="dot dot--unsure"></i><span><b>Grey with stripes</b> means not sure.</span></li>
+      </ul>
+      <p>Every chart has a plain question above it and a one-line answer. Point at a chart for the exact numbers. Words you may not know are in the <button type="button" class="term" data-open="words">Words</button> list. Anything we have not measured yet is marked "To do".</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 1. THE PROBLEM ============ -->
+<section class="sec chapter" id="problem" aria-labelledby="problem-title">
+  <div class="wrap">
+    <p class="chapter__n" aria-hidden="true">1</p>
+    <div class="chapter__head">
+      <h2 class="h-chapter" id="problem-title">The problem</h2>
+      <p class="lede lede--wide">Noor farms coffee, and her yields dropped. She can't tell why, and the extension officer is far away. A photo of a leaf could answer one important question: does it have rust?</p>
+      <p class="chapter__toc">In this chapter: <a href="#noor">Meet Noor</a> · <a href="#rust">What rust looks like</a> · <a href="#gap">Why training photos matter</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec noor" id="noor" aria-labelledby="noor-title">
+  <div class="wrap two">
+    <div class="noor__text">
+      <h3 class="h-section" id="noor-title">Meet Noor</h3>
+      <p>Noor is 38 and farms 2 hectares in the Ondera highlands. Coffee grows on the upper slope. Maize and beans grow below it.</p>
+      <p>The extension officer reaches her sub-county twice a year at best. At harvest, a buyer names a price she has no way to check.</p>
+      <p>She has a phone for calls and mobile money. Her daughter's smartphone comes home on weekends. The house has no Wi-Fi, so Noor buys 3G data when she needs it.</p>
+      <p data-fact="smallholders">She is not alone. More than 25 million farmers depend on coffee, and smallholders grow about 80% of the world's coffee.<span class="src">Source: FAO Director-General, 27 July 2025.</span></p>
+      <p class="note">Noor is fictional. Her limits are not. They come from the World Bank brief for this challenge.</p>
+    </div>
+    <figure class="slope" id="slope" aria-label="A hillside. Coffee on the upper slope, maize and beans below, the house at the bottom with the phone, and the extension officer far away.">
+      <svg viewBox="0 0 640 520" role="img" aria-hidden="true">
+        <defs>
+          <pattern id="p-coffee" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M2 12c0-6 4-9 10-10-1 6-4 9-10 10Z" fill="currentColor" opacity=".55"/></pattern>
+          <pattern id="p-maize" width="12" height="16" patternUnits="userSpaceOnUse"><path d="M6 15V3M6 7l-3-3M6 9l3-3" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".5"/></pattern>
+        </defs>
+        <path class="sl-sky" d="M0 0h640v520H0z"/>
+        <path class="sl-band sl-band--coffee" d="M0 190C120 150 230 118 345 96 450 76 560 70 640 78V248C540 232 430 238 330 262 220 288 110 300 0 292Z"/>
+        <path class="sl-pat sl-pat--coffee" d="M0 190C120 150 230 118 345 96 450 76 560 70 640 78V248C540 232 430 238 330 262 220 288 110 300 0 292Z" fill="url(#p-coffee)"/>
+        <path class="sl-band sl-band--maize" d="M0 292C110 300 220 288 330 262 430 238 540 232 640 248V386C530 372 420 378 320 398 210 420 100 424 0 410Z"/>
+        <path class="sl-pat sl-pat--maize" d="M0 292C110 300 220 288 330 262 430 238 540 232 640 248V386C530 372 420 378 320 398 210 420 100 424 0 410Z" fill="url(#p-maize)"/>
+        <path class="sl-band sl-band--valley" d="M0 410C100 424 210 420 320 398 420 378 530 372 640 386V520H0Z"/>
+        <path class="sl-line" d="M0 190C120 150 230 118 345 96 450 76 560 70 640 78"/>
+        <path class="sl-walk" d="M118 456C150 400 210 336 262 292S350 190 408 150"/>
+        <g class="sl-house" transform="translate(70 430)"><path d="M0 22V8L16 -4 32 8v14Z"/><rect x="12" y="10" width="8" height="12" class="sl-door"/></g>
+      </svg>
+      <ul class="slope__pins">
+        <li style="--x:64%;--y:20%"><b>Coffee</b><span>Upper slope. The leaves are here.</span></li>
+        <li style="--x:70%;--y:57%"><b>Maize and beans</b><span>Below the coffee.</span></li>
+        <li style="--x:17%;--y:86%"><b>House</b><span>No Wi-Fi. 3G bundles. The phone stays here.</span></li>
+        <li style="--x:84%;--y:92%"><b>Extension officer</b><span>Twice a year at best.</span></li>
+      </ul>
+      <figcaption class="note">A sketch from the brief. Not to scale.</figcaption>
+    </figure>
+  </div>
+  <div class="wrap"><p class="pull">The leaves are on the slope. <em>The phone is at the house.</em> So the AI has to work on the phone, with no internet.</p></div>
+</section>
+
+<section class="sec sec--paper rust" id="rust" aria-labelledby="rust-title">
+  <div class="wrap two">
+    <div class="rust__stage">
+      <figure class="spec" id="spec">
+        <div class="spec__img">
+          <img src="img/pipeline/897_cutout.webp" alt="A coffee leaf cut out from its photo. It has orange rust spots and one brown patch." width="1400" height="525" decoding="async" loading="lazy">
+          <ul class="spec__hot" id="spec-hot"></ul>
+        </div>
+        <figcaption class="note"><span class="tag tag--real">Real photo</span> BRACOL leaf 897. BRACOL marks it: rust yes, leaf miner yes, severity 4.</figcaption>
+      </figure>
+      <div class="spec__tip" id="spec-tip" role="status"><b>Point at a ring</b><span>Orange rings mark rust spots. The dashed ring marks a brown patch from something else.</span></div>
+    </div>
+    <div class="rust__text">
+      <h3 class="h-section" id="rust-title">What coffee leaf rust looks like</h3>
+      <p data-fact="rust-what">Coffee leaf rust is a fungus. It shows as yellow-orange powdery spots on the underside of the leaf. Later the centres turn brown and the leaf falls early. The spores travel on wind and rain.</p>
+      <p data-fact="rust-scale">It is costly. In 2012 and 2013 it cost Central America and nearby countries an estimated 2.7 million bags of coffee, about 500 million US dollars and about 374,000 jobs.<span class="src">Source: International Coffee Organization, report ED 2157/13, using PROMECAFE figures.</span></p>
+      <p>A leaf can have more than one problem. This leaf has rust and leaf miner damage. Our question stays narrow: <b>rust, yes or no.</b></p>
+      <div class="sev card" id="sev">
+        <div class="sev__head"><p><b>How bad is it?</b> BRACOL grades the share of the leaf with symptoms, from 0 to 4.</p><p class="sev__val" id="sev-val">Severity 1</p></div>
+        <button type="button" class="sev__photo" aria-label="Show another example of this severity"><img id="sev-img" alt="" width="900" height="450" decoding="async"></button>
+        <input type="range" id="sev-range" min="0" max="4" step="1" value="1" aria-label="Severity from 0 to 4" aria-describedby="sev-note">
+        <div class="sev__ticks" aria-hidden="true"><span>0 none</span><span>1</span><span>2</span><span>3</span><span>4</span></div>
+        <p class="sev__note" id="sev-note"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec gap" id="gap" aria-labelledby="gap-title">
+  <div class="wrap">
+    <div class="gap__head">
+      <h3 class="h-section" id="gap-title">Training photos don't look like Noor's farm</h3>
+      <p class="lede">Most public photo sets are tidy: one leaf, a plain background, good light. The brief warns that an AI trained only on these does poorly on real field photos.</p>
+      <p data-fact="mohanty">A well-known test shows the size of the problem. A plant disease AI scored 99.35% on held-out photos from its own set, and about 31% on photos taken in other conditions.<span class="src">Source: Mohanty, Hughes and Salathé, Frontiers in Plant Science, 2016.</span></p>
+    </div>
+
+    <div class="compare" id="compare">
+      <div class="compare__side compare__side--tidy">
+        <div class="mosaic mosaic--tidy" id="mosaic-tidy" aria-hidden="true"></div>
+        <p class="compare__cap"><span class="tag tag--real">Real</span> BRACOL, Brazil, plain paper, <span data-bind="n.bracol.total">1,747</span> leaves</p>
+      </div>
+      <div class="compare__side compare__side--messy" id="compare-messy">
+        <div class="mosaic mosaic--messy" id="mosaic-messy" aria-hidden="true"></div>
+        <p class="compare__cap compare__cap--right"><span class="tag tag--real">Real</span> Uganda, phones on farms, <span data-bind="n.uganda.kept">1,792</span> photos</p>
+      </div>
+      <button type="button" class="compare__handle" id="compare-handle" role="slider" aria-label="Move to compare tidy and messy photos" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span></span></button>
+    </div>
+    <p class="note">Drag the line to compare. Point at a photo to see where it comes from.</p>
+
+    <div class="shortcut" id="shortcut">
+      <div class="shortcut__text">
+        <h4 class="h-card" data-reveal>A trap we found in BRACOL</h4>
+        <p data-reveal>In BRACOL, the colour of the photo border alone predicts rust. Three numbers and no leaf give an <button type="button" class="term" data-term="auc">AUC</button> of <b data-bind="shortcut.bracol.auc">0.74</b>. That is far from a coin flip (0.50).</p>
+        <p data-reveal>An AI can learn the paper and skip the leaf. Our practice photos have random backgrounds, and the same check gives <b data-bind="shortcut.synthetic.auc">0.50</b>.</p>
+        <p class="note" data-reveal>The chart shows the border colour of each photo, split by whether the leaf has rust. Two separate curves mean the colour gives it away. Two curves on top of each other mean it does not.</p>
+      </div>
+      <figure class="chart card" id="chart-shortcut" aria-labelledby="shortcut-title">
+        <figcaption id="shortcut-title" class="chart__title">Does the photo border give the answer away?</figcaption>
+        <div class="chart__tabs" role="group" aria-label="Photo set">
+          <button type="button" aria-pressed="true" data-set="bracol">BRACOL photos</button>
+          <button type="button" aria-pressed="false" data-set="synthetic">Practice photos</button>
+        </div>
+        <div class="chart__plot" id="shortcut-plot"></div>
+        <div class="chart__legend"><span class="lg lg--rust">Leaves with rust</span><span class="lg lg--none">Leaves without rust</span></div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. THE SOLUTION ============ -->
+<section class="sec chapter chapter--solution" id="solution" aria-labelledby="solution-title">
+  <div class="wrap">
+    <p class="chapter__n" aria-hidden="true">2</p>
+    <div class="chapter__head">
+      <h2 class="h-chapter" id="solution-title">The solution</h2>
+      <p class="lede lede--wide">We make the practice photos we can't take. We start from real leaf photos, bend each leaf in 3D, put it in different light and weather, and photograph it with a virtual phone. Every practice photo keeps the label of its source leaf.</p>
+      <p class="chapter__toc">In this chapter: <a href="#pipeline">How a practice photo is made</a> · <a href="#dial">Eight kinds of weather</a> · <a href="#dataset">The practice photos</a> · <a href="#model">The small AI</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="pipeline" id="pipeline" data-chapter="solution" aria-label="How one practice photo is made, in six steps">
+  <div class="pipeline__intro wrap">
+    <h3 class="h-section">How a practice photo is made</h3>
+    <p class="lede">Scroll to follow one real leaf through six steps. In step 3 you can bend the leaf and change its background.</p>
+  </div>
+  <div class="pipeline__track" id="pl-track">
+    <div class="pipeline__sticky">
+      <div class="pipeline__left">
+        <ol class="steps" id="pl-steps">
+          <li data-step="0"><span class="steps__n">1</span><div><h4>Start with a real leaf</h4><p>BRACOL leaf 897, photographed on paper. Its label is rust, severity 4. Only leaves from the training split are ever used. Validation and test leaves stay out.</p></div></li>
+          <li data-step="1"><span class="steps__n">2</span><div><h4>Cut it out and find the spots</h4><p>A script removes the paper, then finds the yellow-orange spots and the brown patches. <span data-bind="n.textures.usable">1,221</span> of <span data-bind="n.textures.ofTrain">1,225</span> training leaves pass the checks.</p></div></li>
+          <li data-step="2"><span class="steps__n">3</span><div><h4>Bend it in 3D and pick a background</h4><p>Blender wraps the photo on a leaf with a fold, a droop, a twist and wavy edges. Here you can change the bend and the background yourself.</p></div></li>
+          <li data-step="3"><span class="steps__n">4</span><div><h4>Put it in the field</h4><p>Light and weather come from eight presets. Blurred leaves, stems and soil sit behind it, and a virtual camera takes the picture. One image takes a few seconds.</p></div></li>
+          <li data-step="4"><span class="steps__n">5</span><div><h4>Make it look like a phone photo</h4><p>The picture gets the flaws of a real phone: colour shifts, blur, noise, a darker corner and JPEG damage. We keep the settings of every picture.</p></div></li>
+          <li data-step="5"><span class="steps__n">6</span><div><h4>Keep the label</h4><p>The practice photo gets the label of its source leaf. For a rust leaf, a close-up aims at an orange spot, so the label stays true. Set 1 holds <span data-bind="n.synthetic.v1">1,353</span> labelled photos.</p></div></li>
+        </ol>
+        <p class="pl-progress" id="pl-progress">Step 1 of 6</p>
+      </div>
+      <div class="pipeline__stage" id="pl-stage">
+        <div class="pl-grid" aria-hidden="true"></div>
+        <div class="pl-frame" id="pl-frame">
+          <img class="pl-plate" id="pl-plate-a" alt="" width="1024" height="512" decoding="async">
+          <img class="pl-plate" id="pl-plate-b" alt="" width="1024" height="512" decoding="async">
+          <figure class="pl-layer pl-original"><img src="img/pipeline/897_original.webp" alt="The original BRACOL photo of leaf 897 on white paper" width="1600" height="800" decoding="async" loading="lazy"></figure>
+          <div class="pl-cut" id="pl-cut"><img src="img/pipeline/897_cutout.webp" alt="The leaf cut out from the paper" width="1400" height="525" decoding="async" loading="lazy"><ul class="pl-lesions" id="pl-lesions"></ul></div>
+          <i class="pl-scan" id="pl-scan" aria-hidden="true"></i>
+          <canvas class="pl-3d" id="pl-canvas" aria-label="A 3D coffee leaf. Drag it, or use the arrow keys, to turn it. The sliders bend it." tabindex="-1"></canvas>
+          <figure class="pl-layer pl-scene"><canvas id="pl-resolve" width="1024" height="512" aria-label="A render of the leaf in a field scene"></canvas></figure>
+          <figure class="pl-layer pl-phone"><img id="pl-phone-img" alt="The same render after phone effects" width="1024" height="512" decoding="async"></figure>
+          <ul class="pl-fan" id="pl-fan" aria-label="Three training renders of this leaf"></ul>
+        </div>
+        <div class="pl-controls" id="pl-controls">
+          <div class="pl-controls__row">
+            <label><span>Fold</span><input type="range" min="0" max="100" value="40" data-k="fold"></label>
+            <label><span>Droop</span><input type="range" min="0" max="100" value="50" data-k="droop"></label>
+            <label><span>Twist</span><input type="range" min="0" max="100" value="25" data-k="twist"></label>
+            <label><span>Wavy edge</span><input type="range" min="0" max="100" value="55" data-k="wave"></label>
+            <label><span>Sun angle</span><input type="range" min="0" max="100" value="40" data-k="sun"></label>
+            <button type="button" class="chip" id="pl-reset">Reset</button>
+          </div>
+          <div class="pl-controls__row pl-env" id="pl-env" role="group" aria-label="Background"></div>
+        </div>
+        <div class="pl-tag" id="pl-tag"></div>
+        <dl class="pl-readout" id="pl-readout"></dl>
+        <div class="pl-label" id="pl-label" data-verdict="yes"><span class="result__icon"><svg aria-hidden="true"><use href="#i-spots"/></svg></span><div><b>Label kept: rust</b><span>Copied from BRACOL leaf 897</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec dial" id="dial" aria-labelledby="dial-title">
+  <div class="wrap">
+    <div class="dial__head">
+      <h3 class="h-section" id="dial-title">The same leaf in eight kinds of weather</h3>
+      <p class="lede">Pick a scene. On the left is what Blender makes. On the right is what a phone would record. The label is always rust.</p>
+    </div>
+    <div class="env-chips" id="dial-chips" role="group" aria-label="Scene"></div>
+    <div class="dial__pair">
+      <figure class="shot"><img id="dial-raw" alt="" width="1024" height="512" decoding="async"><figcaption><span class="tag tag--render">Made in 3D</span> The raw render</figcaption></figure>
+      <figure class="shot"><img id="dial-phone" alt="" width="1024" height="512" decoding="async"><figcaption><span class="tag tag--render">Made in 3D</span> With phone flaws added</figcaption></figure>
+    </div>
+    <p class="note" id="dial-facts"></p>
+  </div>
+</section>
+
+<section class="sec sec--paper dataset" id="dataset" aria-labelledby="dataset-title">
+  <div class="wrap">
+    <div class="dataset__head">
+      <h3 class="h-section" id="dataset-title"><span data-bind="n.synthetic.all">3,253</span> practice photos nobody took</h3>
+      <p class="lede">We made four sets. Set 1 has <span data-bind="n.synthetic.v1">1,353</span> photos and trained the models in the first results. Set 2 has as many more and is not used yet. Set 3 keeps <span data-bind="v3.copiedFromV1">806</span> photos from set 1 and swaps the rest for <span data-bind="v3.newHardNegatives">547</span> look-alike photos. Set 4 keeps all of set 1 and adds the look-alikes. The results of sets 3 and 4 are in chapter 3.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Filter the mosaic" id="synth-filters"></div>
+    <div class="mosaic mosaic--synth" id="synth-mosaic"></div>
+    <p class="dataset__readout" id="synth-readout" aria-live="polite">Point at a photo for its label and settings.</p>
+
+    <div class="unusable" id="unusable">
+      <div class="unusable__text">
+        <h4 class="h-card">Photos the AI should refuse</h4>
+        <p>We also made <span data-bind="n.synthetic.unusable">150</span> bad photos on purpose: no leaf, a leaf too small to judge, out of focus, glare, and too dark. A safe AI says "not sure" on these. It must not guess.</p>
+      </div>
+      <ul class="unusable__row" id="unusable-row"></ul>
+      <aside class="pending" data-pending="unsure-test" data-need="Share of these 150 photos answered 'not sure', by kind, for each model"><span class="pending__tag">To do</span><p><b>Not-sure test.</b> We have not scored these photos yet. This is where the share of "not sure" answers, by kind of damage, will go.</p></aside>
+    </div>
+  </div>
+</section>
+
+<section class="sec model" id="model" aria-labelledby="model-title">
+  <div class="wrap">
+    <div class="model__text">
+      <h3 class="h-section" id="model-title">The small AI</h3>
+      <p data-fact="gemma">The AI is Gemma 4 E2B, an open model from Google DeepMind with 2.3 billion effective parameters and an Apache 2.0 licence. We teach it with <button type="button" class="term" data-term="lora">LoRA</button>, which trains a small add-on and leaves the base model alone. We show it a photo and ask one question. The answer is one word.</p>
+      <p>Why a photo AI and not an SMS or a spreadsheet? Rust has to be seen, and an SMS can't look at a leaf. The officer is far away. A photo is the shortest way to ask.</p>
+    </div>
+
+    <div class="decide card" id="decide" aria-labelledby="decide-title">
+      <h4 class="h-card" id="decide-title">How the AI decides</h4>
+      <p>It gives every photo a score. Below the <button type="button" class="term" data-term="cutoff">cut-off</button> the answer is no rust. Above it the answer is rust. In a band around the cut-off the answer is "not sure, ask a person".</p>
+      <div class="decide__bar" aria-hidden="true">
+        <div class="decide__zone decide__zone--no"><b>No rust found</b><span>Low score</span></div>
+        <div class="decide__zone decide__zone--unsure"><b>Not sure</b><span>Ask a person</span></div>
+        <div class="decide__zone decide__zone--yes"><b>Rust found</b><span>High score</span></div>
+      </div>
+      <ul class="rails">
+        <li><b>Only three answers.</b> The AI can't invent an answer. It says rust, no rust, or not sure.</li>
+        <li><b>A person decides.</b> "Not sure" sends Noor to the extension officer. The tool never acts for her.</li>
+        <li><b>No rust is not healthy.</b> "No rust found" means no rust. The leaf can still have another problem.</li>
+      </ul>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone" id="phone" aria-label="Design sketch of the phone screen">
+        <div class="phone__bar"><span>9:41</span><span>Offline</span></div>
+        <div class="phone__cam"><img id="phone-img" alt="" width="1200" height="600" decoding="async"></div>
+        <div class="result result--phone" id="phone-result" data-verdict="yes"><span class="result__icon"><svg aria-hidden="true"><use href="#i-spots"/></svg></span><div class="result__body"><b class="result__word" id="phone-word">Ndiyo</b><span class="result__sub" id="phone-line">Kutu ya majani ya kahawa</span></div></div>
+        <p class="phone__help" id="phone-help">Angalia majani ya karibu.</p>
+      </div>
+      <div class="phone-ui">
+        <h4 class="h-card">The phone screen, as a sketch</h4>
+        <div class="seg" role="group" aria-label="Phone language">
+          <button type="button" aria-pressed="true" data-lang="sw">Kiswahili</button>
+          <button type="button" aria-pressed="false" data-lang="en">English</button>
+        </div>
+        <div class="seg" role="group" aria-label="Answer shown">
+          <button type="button" aria-pressed="true" data-v="yes">Rust</button>
+          <button type="button" aria-pressed="false" data-v="no">No rust</button>
+          <button type="button" aria-pressed="false" data-v="unsure">Not sure</button>
+        </div>
+        <p class="note"><b>Design sketch.</b> The photos and answers are real model output on test photos. The app is not built yet.</p>
+        <aside class="pending" data-pending="voice" data-need="Swahili voice readout of the answer, and a native speaker check of every phone line"><span class="pending__tag">To do</span><p><b>Voice and language check.</b> A Swahili voice readout, and a native speaker's check of every line on this screen.</p></aside>
+      </div>
+    </div>
+
+    <div class="phonestat card" id="phonestat" aria-labelledby="phonestat-title">
+      <h4 class="h-card" id="phonestat-title">Will it run on a phone? What we know</h4>
+      <div class="phonestat__cols">
+        <div>
+          <h5>Not built yet</h5>
+          <p>We have not exported our trained model or run it on a phone. The Android build of the untrained model is one 2.6&nbsp;GB file, and the phone software is Google's LiteRT-LM.</p>
+          <p>Google reports 0.3 seconds to the first word on a Samsung S26 Ultra with a text question. We found no speeds for photos or for cheaper phones.</p>
+        </div>
+        <div>
+          <h5>A catch with "not sure"</h5>
+          <p>The Android code returns the written answer, not the score. Our "not sure" band needs the score. So the phone needs another way: for example, a trained third answer.</p>
+          <p>If the phone reads only the plain yes or no, the untrained AI is not good enough. See the table.</p>
+        </div>
+      </div>
+      <div class="plain" id="plain"></div>
+      <aside class="pending" data-pending="phone-build" data-need="Export our trained model, run it on a real Android phone, and measure file size, speed, memory and the score after conversion. Choose how the phone says not sure"><span class="pending__tag">To do</span><p><b>Phone build.</b> Export the trained model, run it on a real phone, and measure size, speed and the score after conversion. Pick a way to say "not sure" without the score.</p></aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. THE RESULTS ============ -->
+<section class="sec chapter" id="results" aria-labelledby="results-title">
+  <div class="wrap">
+    <p class="chapter__n" aria-hidden="true">3</p>
+    <div class="chapter__head">
+      <h2 class="h-chapter" id="results-title">The results</h2>
+      <p class="lede lede--wide">We taught the AI four ways and tested each version on photos it never saw: <span data-bind="n.bracol.test">261</span> clean photos, and <span data-bind="n.uganda.kept">1,792</span> real photos from Ugandan farms. Here are the answers, one question at a time.</p>
+      <p class="chapter__toc">In this chapter: <a href="#versions">The four versions</a> · <a href="#answers">The answers</a> · <a href="#notsure">Not sure</a> · <a href="#explore">Explore every run</a> · <a href="#tryit">Try it</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--paper versions" id="versions" aria-labelledby="versions-title">
+  <div class="wrap">
+    <h3 class="h-section" id="versions-title">The four versions of the AI</h3>
+    <p class="lede">Same AI, four ways of teaching it. We repeat every trained version three times, with different random starts, to see how much the results move.</p>
+    <div class="arms" id="arms"></div>
+    <p class="note" id="arms-v3"></p>
+  </div>
+</section>
+
+<section class="sec answers" id="answers" aria-labelledby="answers-title">
+  <div class="wrap">
+    <h3 class="h-section" id="answers-title">The answers</h3>
+    <div class="qa-list">
+
+      <article class="qa" id="qa-clean" aria-labelledby="qa-clean-q">
+        <h4 class="qa__q" id="qa-clean-q">Does training help on clean photos?</h4>
+        <p class="qa__a" id="qa-clean-a"></p>
+        <figure class="chart card"><div class="chart__plot" id="qa-clean-plot"></div><figcaption class="chart__foot">Out of 100 clean photos, how many it answers correctly. Test: <span data-bind="n.bracol.test">261</span> BRACOL photos. A tick on a bar is one training run.</figcaption></figure>
+      </article>
+
+      <article class="qa" id="qa-field" aria-labelledby="qa-field-q">
+        <h4 class="qa__q" id="qa-field-q">Do the practice photos help on real farm photos?</h4>
+        <p class="qa__a" id="qa-field-a"></p>
+        <figure class="chart card"><div class="chart__plot" id="qa-field-plot"></div><figcaption class="chart__foot">Out of 100 real Uganda photos, how many it answers correctly. Test: <span data-bind="n.uganda.kept">1,792</span> photos. A tick on a bar is one training run. The cut-off was set on clean BRACOL photos.</figcaption></figure>
+      </article>
+
+      <article class="qa" id="qa-why" aria-labelledby="qa-why-q">
+        <h4 class="qa__q" id="qa-why-q">Why not? What goes wrong?</h4>
+        <p class="qa__a" id="qa-why-a"></p>
+        <div class="qa__pair">
+          <figure class="chart card"><div class="chart__plot" id="qa-why-plot"></div><figcaption class="chart__foot">Out of 100 leaves of each kind, how many it answers correctly.</figcaption></figure>
+          <figure class="why-pics" id="why-pics" aria-label="Real Uganda photos where the versions disagree">
+            <div class="why-pics__row"><p class="why-pics__label" id="why-other-label"><b>Another disease (phoma).</b> The practice-photo versions say "rust". The real-photo version says "no rust".</p><ul id="why-other"></ul></div>
+            <div class="why-pics__row"><p class="why-pics__label" id="why-rust-label"><b>Rust, as labelled.</b> The practice-photo versions find it. The real-photo version misses it.</p><ul id="why-rust"></ul></div>
+            <figcaption class="note">Real Uganda photos, five of each. The two practice-photo versions give these answers in all three training runs. The real-photo version gives the opposite answer in all three.</figcaption>
+          </figure>
+        </div>
+      </article>
+
+      <article class="qa" id="qa-v3" aria-labelledby="qa-v3-q">
+        <h4 class="qa__q" id="qa-v3-q">Did our fixes work?</h4>
+        <p class="qa__a" id="qa-v3-a"></p>
+        <p class="qa__a" id="qa-v4-a"></p>
+        <div class="qa__pair">
+          <figure class="chart card"><div class="chart__plot" id="qa-v3-plot"></div><figcaption class="chart__foot" id="qa-v3-foot">Right answers out of 100 on the real Uganda photos. "Both" means real and practice photos together, with all the real photos. A tick on a bar is one training run.</figcaption></figure>
+          <div class="v3pics">
+            <p class="note"><b>The look-alike photos.</b> We made <span data-bind="v3.newHardNegatives">547</span> practice photos of leaves with another disease and an orange rim around the dark lesion. All of them are labelled "no rust". <b>Set 3</b> swaps them in for part of set 1 and keeps <span data-bind="v3.copiedFromV1">806</span> photos of it. <b>Set 4</b> keeps all of set 1 and adds them.</p>
+            <ul class="why__strip" id="why-strip" aria-label="Six render set 3 look-alike photos"></ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="qa" id="qa-local" aria-labelledby="qa-local-q">
+        <h4 class="qa__q" id="qa-local-q">How many local photos does it take to set the cut-off?</h4>
+        <p class="qa__a" id="qa-local-a"></p>
+        <figure class="chart card"><div class="chart__plot" id="qa-local-plot"></div><figcaption class="chart__foot" id="qa-local-foot">Right answers on 300 test photos from Uganda, when the cut-off is set on a small sample of other Uganda photos.</figcaption></figure>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--paper notsure" id="notsure" aria-labelledby="notsure-title">
+  <div class="wrap two">
+    <div class="notsure__text">
+      <h3 class="h-section" id="notsure-title">Can it say "not sure"?</h3>
+      <p class="qa__a" id="ns-answer" aria-live="polite"></p>
+      <p>Every photo gets a score. The chart shows the scores of real photos. Photos with rust (orange) should land on the right. Photos without rust (green) should land on the left. Near the cut-off the AI is often wrong, so we put a band around it. A photo inside the band gets "not sure".</p>
+      <p>Drag the band wider. The AI answers fewer photos, and the ones it answers are right more often.</p>
+      <div class="band-controls">
+        <div class="seg" role="group" aria-label="Version" id="ns-model"></div>
+        <div class="seg" role="group" aria-label="Photos" id="ns-set">
+          <button type="button" aria-pressed="true" data-set="bracolTest">Clean BRACOL photos</button>
+          <button type="button" aria-pressed="false" data-set="ugandaAll">Real Uganda photos</button>
+        </div>
+        <label class="range"><span>Band width</span><input type="range" id="ns-range" min="0" max="100" value="22" aria-describedby="ns-out"><output id="ns-val"></output></label>
+      </div>
+      <dl class="ns-stats" id="ns-out" aria-live="polite"></dl>
+    </div>
+    <figure class="chart card" id="chart-band" aria-labelledby="band-title">
+      <figcaption class="chart__title" id="band-title">Scores of real photos</figcaption>
+      <div class="chart__plot" id="band-plot"></div>
+      <div class="chart__legend" id="band-legend"><span class="lg lg--rust">Photos with rust</span><span class="lg lg--none">Photos without rust</span><span class="lg lg--phoma">Phoma photos</span><span class="lg lg--band">Not sure band</span></div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec explore" id="explore" aria-labelledby="explore-title">
+  <div class="wrap">
+    <h3 class="h-section" id="explore-title">Explore every run</h3>
+    <p class="lede">For readers who want the detail. Pick a test set. Three charts follow. Dots are single training runs, so you can see how much results move.</p>
+    <details class="more" id="more">
+      <summary><span>Open the explorer</span></summary>
+      <div class="bench" id="bench">
+        <div class="bench__bar">
+          <p class="label">Test on</p>
+          <div class="seg seg--big" role="group" aria-label="Test set" id="bench-set">
+            <button type="button" aria-pressed="true" data-set="bracol"><b>Clean photos</b><span>261 BRACOL photos</span></button>
+            <button type="button" aria-pressed="false" data-set="uganda"><b>Real farm photos</b><span>1,792 Uganda photos</span></button>
+            <button type="button" aria-pressed="false" data-set="kenya"><b>Kenya stress test</b><span>197 small photos</span></button>
+          </div>
+          <p class="bench__says" id="bench-says" aria-live="polite"></p>
+        </div>
+        <div class="bench__grid">
+          <figure class="chart card" id="chart-ladder" aria-labelledby="ladder-title">
+            <figcaption class="chart__title" id="ladder-title">1. Ranking score (<button type="button" class="term" data-term="auc">AUC</button>), all real photos used</figcaption>
+            <div class="chart__plot" id="ladder-plot"></div>
+            <p class="chart__foot">Pick one leaf with rust and one without. The score is how often the AI ranks the rust leaf higher. 1.0 is perfect, 0.5 is a coin flip.</p>
+          </figure>
+          <figure class="chart card" id="chart-scarcity" aria-labelledby="scarcity-title">
+            <figcaption class="chart__title" id="scarcity-title">2. With fewer real photos</figcaption>
+            <div class="chart__plot" id="scarcity-plot"></div>
+            <p class="chart__foot">Share of the 1,225 real training photos used. Ranking score on the test set.</p>
+          </figure>
+          <figure class="chart card chart--wide" id="chart-severity" aria-labelledby="severity-title">
+            <figcaption class="chart__title" id="severity-title">3. Right answers and rust caught</figcaption>
+            <div class="chart__plot" id="severity-plot"></div>
+            <p class="chart__foot" id="severity-foot"></p>
+          </figure>
+        </div>
+        <div class="legend legend--arms" id="arms-legend" aria-label="Legend"></div>
+        <p class="chart__foot" id="runs-note"></p>
+        <button type="button" class="link-btn" id="table-toggle" aria-expanded="false" aria-controls="results-table">Show the numbers as a table</button>
+        <div class="table-wrap" id="results-table" hidden></div>
+      </div>
+    </details>
+
+    <div class="honest" id="honest">
+      <h3 class="h-section">What we can say, and what we can't</h3>
+      <div class="honest__cols">
+        <div class="honest__col honest__col--yes"><h4>What the numbers show</h4><ul id="honest-yes"></ul></div>
+        <div class="honest__col honest__col--no"><h4>What they do not show yet</h4><ul id="honest-no"></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--paper tryit" id="tryit" aria-labelledby="tryit-title">
+  <div class="wrap">
+    <div class="tryit__head">
+      <h3 class="h-section" id="tryit-title">Try it: pick a photo and see what each version said</h3>
+      <p class="lede">These are real scores on test photos the AI never saw. Some are wrong. We left them in.</p>
+    </div>
+    <div class="tryit__body">
+      <div class="tray" id="tray" role="group" aria-label="Test photos"></div>
+      <div class="tryit__main">
+        <figure class="shot tryit__photo" id="try-photo">
+          <img id="try-img" alt="" width="1200" height="600" decoding="async" loading="lazy">
+          <figcaption id="try-tag"></figcaption>
+        </figure>
+        <div class="tryit__panel">
+          <p class="tryit__truth" id="try-truth" aria-live="polite"></p>
+          <ul class="models" id="try-models"></ul>
+          <p class="note" id="try-note"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. WHAT IS NEXT ============ -->
+<section class="sec chapter" id="next" aria-labelledby="next-title">
+  <div class="wrap">
+    <p class="chapter__n" aria-hidden="true">4</p>
+    <div class="chapter__head">
+      <h2 class="h-chapter" id="next-title">What is next</h2>
+      <p class="lede lede--wide">Our data has gaps, and we say where. The most useful next step is to make the practice photos look like one real place, and to check them against about 100 photos from there.</p>
+      <p class="chapter__toc">In this chapter: <a href="#limits">What our data does not cover</a> · <a href="#local">Making it local</a> · <a href="#take">Our take</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec limits" id="limits" aria-labelledby="limits-title">
+  <div class="wrap">
+    <div class="limits__head">
+      <h3 class="h-section" id="limits-title">What our data does not cover</h3>
+      <p class="lede">The brief scores this part. Here is each kind of photo, and which of our sets really has it.</p>
+    </div>
+    <div class="matrix-wrap"><table class="matrix" id="matrix"></table></div>
+    <ul class="limits__list" id="limits-list"></ul>
+  </div>
+</section>
+
+<section class="sec sec--paper local" id="local" aria-labelledby="local-title">
+  <div class="wrap">
+    <div class="local__head">
+      <h3 class="h-section" id="local-title">Making it local</h3>
+      <p class="lede">Our first practice photos are general. They use leaves from Brazil and scenes that look like no place in particular. The next step is narrower: keep the same pipeline and change the scene to match one place.</p>
+    </div>
+    <div class="two">
+      <div class="region card" id="region">
+        <div class="region__head"><p class="label">Scene pack</p>
+          <div class="seg" role="group" aria-label="Scene pack" id="region-seg">
+            <button type="button" aria-pressed="true" data-pack="general">General (built)</button>
+            <button type="button" aria-pressed="false" data-pack="highland">Ondera highlands (planned)</button>
+            <button type="button" aria-pressed="false" data-pack="lowland">Your region (planned)</button>
+          </div>
+        </div>
+        <div class="region__body" id="region-body"></div>
+      </div>
+      <div class="local__todo">
+        <p>Then we check the new photos on about 100 real photos from the same place, and set the cut-off there. The local-photos chart in chapter 3 shows why about 100 is a good start.</p>
+        <aside class="pending pending--wide" data-pending="region-pack" data-need="A region scene pack, a retrain on it, and a test on real local photos"><span class="pending__tag">To do</span><p><b>Region pack and local test.</b> Build the pack, retrain, then score real photos from the same region. Not started.</p></aside>
+        <aside class="pending pending--wide" data-pending="local-photos" data-need="50 to 100 real photos from the cooperative, labelled by an agronomist, to set the cut-off"><span class="pending__tag">To do</span><p><b>Real local photos.</b> 50 to 100 photos from the cooperative, labelled by an agronomist. Our calibration test used Uganda photos as a stand-in.</p></aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec take" id="take" aria-labelledby="take-title">
+  <div class="wrap">
+    <p class="label">Our take</p>
+    <h3 class="take__quote" id="take-title">Localizing AI means the training world looks like the farm.</h3>
+    <div class="take__body">
+      <p>A leaf AI is only as local as its photos. Ours learned from Brazilian leaves on paper, and from 3D practice photos of them. It scores well on clean photos. On Uganda phone photos the practice photos did not beat real photos alone, and the closest version (set 4) needed look-alike photos that we added after we studied its mistakes. It has never seen Noor's farm.</p>
+      <p>So we localize the data first. We change the light, the soil, the crops next to the coffee and the phone camera in the practice photos, then test on real photos from the place. We also localize trust. The tool says "not sure" when it should, and Noor and her officer decide.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="sec close" id="close">
+  <div class="wrap">
+    <div class="close__answers" aria-label="The three answers the AI can give">
+      <div class="result" data-verdict="yes"><span class="result__icon"><svg aria-hidden="true"><use href="#i-spots"/></svg></span><div class="result__body"><b class="result__word">Rust found</b></div></div>
+      <div class="result" data-verdict="no"><span class="result__icon"><svg aria-hidden="true"><use href="#i-check"/></svg></span><div class="result__body"><b class="result__word">No rust found</b></div></div>
+      <div class="result" data-verdict="unsure"><span class="result__icon"><svg aria-hidden="true"><use href="#i-ask"/></svg></span><div class="result__body"><b class="result__word">Not sure, ask a person</b></div></div>
+    </div>
+    <div class="close__grid">
+      <div>
+        <h2 class="label">Links</h2>
+        <ul class="links">
+          <li><span class="ph" data-pending="repo-link" data-need="Public GitHub repository URL">Repository: add the public URL</span></li>
+          <li><span class="ph" data-pending="demo-link" data-need="Hosted demo URL">Hosted demo: add the URL</span></li>
+          <li><span class="ph" data-pending="team" data-need="Team names, team photo, and the three 60-second videos">Team: Dresden Hub · names, photo and videos to add</span></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="label">Data and credit</h2>
+        <ul class="credits">
+          <li><b>BRACOL</b> leaf photos: Krohling, Esgario and Ventura, Mendeley Data, CC BY 4.0. Our practice photos are adapted from it.</li>
+          <li><b>Uganda</b>: "A Machine Learning Dataset for Classification of Common Coffee Leaf Diseases in Uganda", Chelangat, Anirwoth, Mayanja and Sserwadda, Mendeley Data 2025, CC BY 4.0. Test only.</li>
+          <li><b>Kenya</b>: JMuBEN, Jepkoech et al., Data in Brief 36:107142, 2021, CC BY. We hold a 128 pixel copy. Stress test only.</li>
+          <li><b>Gemma 4 E2B</b>, Google DeepMind, Apache 2.0. Practice photos made in Blender. Type: Big Shoulders, Atkinson Hyperlegible Next, JetBrains Mono (SIL Open Font License). 3D by three.js (MIT).</li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="label">Brief</h2>
+        <p class="small">Hack-Nation × World Bank Youth Summit. Small AI for Development Hackathon. Challenge 04, Agriculture. Competition weekend 3 and 4 October 2026.</p>
+        <p class="small">Press <kbd>P</kbd> to light up every item still to do.</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</main>
+
+<aside class="drawer" id="words-drawer" aria-label="Words used on this page" hidden>
+  <div class="drawer__head"><h2 class="h-card">Words used here</h2><button type="button" class="btn-mini" data-close="words">Close</button></div>
+  <dl class="words" id="words-list"></dl>
+</aside>
+
+<aside class="drawer" id="pending-drawer" aria-label="Items still to do" hidden>
+  <div class="drawer__head"><h2 class="h-card">Not measured yet</h2><button type="button" class="btn-mini" data-close="pending">Close</button></div>
+  <p class="small">Everything on this page that still needs a number, a build or a check. Click one to jump to it.</p>
+  <ol class="drawer__list" id="pending-list"></ol>
+</aside>
+
+<div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+<script src="js/app.js" defer></script>
+</body>
+</html>

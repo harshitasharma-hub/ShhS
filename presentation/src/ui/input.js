@@ -7,7 +7,7 @@ export class Input {
     window.addEventListener('wheel', (e) => this._onWheel(e), { passive: false });
     let sx = 0, sy = 0, st = 0, moved = false;
     window.addEventListener('touchstart', (e) => {
-      if (e.target.closest('[data-scroll], input, .seam')) { moved = true; return; }
+      if (e.target.closest('[data-scroll], [data-drag], input, .seam')) { moved = true; return; }   // [data-drag] is a picture you turn with a finger
       sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = performance.now(); moved = false;
     }, { passive: true });
     window.addEventListener('touchend', (e) => {

@@ -1,0 +1,79 @@
+{
+ "name": "zeroshot_d280",
+ "detail": 280,
+ "adapter": null,
+ "device": "cuda",
+ "torch": "2.14.1+cu126",
+ "threshold_from_val": -7.625,
+ "val": {
+  "n": 261,
+  "auc": 0.9540633863608337,
+  "accuracy": 0.9042145593869731,
+  "sensitivity": 0.8627450980392157,
+  "specificity": 0.9308176100628931,
+  "precision": 0.8888888888888888,
+  "f1": 0.8756218905472637
+ },
+ "test": {
+  "n": 261,
+  "auc": 0.948205697373289,
+  "accuracy": 0.8850574712643678,
+  "sensitivity": 0.8137254901960784,
+  "specificity": 0.9308176100628931,
+  "precision": 0.8829787234042553,
+  "f1": 0.8469387755102041,
+  "auc_ci95": [
+   0.9216378827734362,
+   0.9706009260914331
+  ],
+  "accuracy_ci95": [
+   0.8467432950191571,
+   0.9233716475095786
+  ],
+  "by_group": {
+   "rust": {
+    "n": 102,
+    "correct": 0.8137254901960784
+   },
+   "healthy": {
+    "n": 41,
+    "correct": 1.0
+   },
+   "other": {
+    "n": 118,
+    "correct": 0.9067796610169492
+   }
+  },
+  "rust_sensitivity_by_severity": {
+   "1": {
+    "n": 62,
+    "sensitivity": 0.7096774193548387
+   },
+   "2": {
+    "n": 26,
+    "sensitivity": 0.9615384615384616
+   },
+   "3": {
+    "n": 5,
+    "sensitivity": 1.0
+   },
+   "4": {
+    "n": 9,
+    "sensitivity": 1.0
+   }
+  }
+ },
+ "not_sure": {
+  "target_accuracy": 0.95,
+  "margin_from_val": 2.125,
+  "val": {
+   "coverage": 0.8199233716475096,
+   "accuracy_answered": 0.9532710280373832
+  },
+  "test": {
+   "coverage": 0.7816091954022989,
+   "accuracy_answered": 0.9313725490196079
+  }
+ },
+ "scoring_seconds": 331.30485572107136
+}

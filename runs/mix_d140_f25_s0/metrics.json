@@ -1,0 +1,89 @@
+{
+ "name": "mix_d140_f25_s0",
+ "detail": 140,
+ "epochs": 3,
+ "lr": 0.0001,
+ "rank": 16,
+ "batch_size": 4,
+ "grad_accum": 4,
+ "fraction": 25,
+ "seed": 0,
+ "train_photos": 660,
+ "synthetic_manifest": "data/synthetic/v1/manifest.csv",
+ "synthetic_photos": 0,
+ "device": "cuda",
+ "torch": "2.14.1+cu126",
+ "train_seconds": 256.21131873317063,
+ "threshold_from_val": -1.0,
+ "val": {
+  "n": 261,
+  "auc": 0.9894869897644593,
+  "accuracy": 0.9578544061302682,
+  "sensitivity": 0.9705882352941176,
+  "specificity": 0.949685534591195,
+  "precision": 0.9252336448598131,
+  "f1": 0.9473684210526315
+ },
+ "test": {
+  "n": 261,
+  "auc": 0.9673202614379085,
+  "accuracy": 0.9195402298850575,
+  "sensitivity": 0.9117647058823529,
+  "specificity": 0.9245283018867925,
+  "precision": 0.8857142857142857,
+  "f1": 0.8985507246376812,
+  "auc_ci95": [
+   0.9417430859276691,
+   0.9863742634581855
+  ],
+  "accuracy_ci95": [
+   0.8850574712643678,
+   0.9501915708812261
+  ],
+  "by_group": {
+   "rust": {
+    "n": 102,
+    "correct": 0.9117647058823529
+   },
+   "healthy": {
+    "n": 41,
+    "correct": 0.9512195121951219
+   },
+   "other": {
+    "n": 118,
+    "correct": 0.9152542372881356
+   }
+  },
+  "rust_sensitivity_by_severity": {
+   "1": {
+    "n": 62,
+    "sensitivity": 0.8870967741935484
+   },
+   "2": {
+    "n": 26,
+    "sensitivity": 0.9230769230769231
+   },
+   "3": {
+    "n": 5,
+    "sensitivity": 1.0
+   },
+   "4": {
+    "n": 9,
+    "sensitivity": 1.0
+   }
+  }
+ },
+ "not_sure": {
+  "target_accuracy": 0.95,
+  "margin_from_val": 0.0,
+  "val": {
+   "coverage": 1.0,
+   "accuracy_answered": 0.9578544061302682
+  },
+  "test": {
+   "coverage": 1.0,
+   "accuracy_answered": 0.9195402298850575
+  }
+ },
+ "scoring_seconds": 25.565060133114457
+}

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { BaseScene } from './baseScene.js';
-import { COL, makeImageCard, plinth, matte, studioLights, RoundedBoxGeometry } from './diagram.js';
+import { COL, makeImageCard, plinth, matte, studioLights, fitShadow, RoundedBoxGeometry } from './diagram.js';
 import { mulberry32 } from '../core/math.js';
 import { RESULTS } from '../results.js';
+import { fitFrame, boxPts } from '../core/frame.js';
 
 // proof-1: the evidence plan. The scarcity curve as an empty chart: every bar is an outline with a "?",
 //          because there are no results yet. Next to it, the locked test every run is scored on.
@@ -25,7 +26,9 @@ function textMesh(w, h, draw, px = 512) {
 }
 
 const GREY = '#9aa3c6';
-const BAR_H = 10;
+const BAR_H = 14;
+// six regions the data does not reach, just outside the cloud of synthetic images (x, y, z)
+const POCKETS = [[-21, 15, 3], [-20, 5, -10], [20, 18, -12], [22, 6, 10], [-4, 25, -3], [13, -3, 13]];
 // five groups: no real photos at all, then 10, 25, 50 and 100% of them
 const GROUPS = [
   { name: '0%', sub: 'no real photos', bars: [['Zero-shot', GREY], ['Renders only', COL.sim]] },
@@ -35,6 +38,7 @@ const GROUPS = [
   { name: '100%', sub: '1,225 leaves', bars: [['Real only', COL.real], ['Real + renders', null]] },
 ];
 const GX = (k) => -20 + k * 10;
+const TEST_X = 41;                       // where the locked test stands
 
 // The measured score for one bar, or null while the run has not been done.
 // Scale: AUC 0.5 is chance (an empty bar) and 1.0 is perfect (the full outline).
@@ -50,6 +54,7 @@ export class ProofScene extends BaseScene {
     const g = this.group;
     this.t = 0;
     this.rig = studioLights(g, 120);
+    fitShadow(this.rig, 8, 40, 36);
 
     // ---------------------------------------------------------- proof-1 rig
     const rig = new THREE.Group();
@@ -119,11 +124,11 @@ export class ProofScene extends BaseScene {
     const lock = new THREE.Group();
     const body = new THREE.Mesh(new RoundedBoxGeometry(3.0, 2.4, 1.4, 3, 0.35), matte(COL.ink, 0.4)); body.position.y = 1.2; body.castShadow = true; lock.add(body);
     const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.24, 12, 28, Math.PI), matte(COL.slate, 0.35)); shackle.position.y = 2.4; shackle.castShadow = true; lock.add(shackle);
-    lock.position.set(0, 8.6, 1.2);
+    lock.position.set(0, 10.4, 1.2);
     test.add(lock);
-    test.position.set(44, 0, 0);
+    test.position.set(TEST_X, 0, 0);
     rig.add(test);
-    rig.add(this._arrow([28, 1.5, 7.6], [38, 1.5, 5]));
+    rig.add(this._arrow([28, 1.5, 7.6], [TEST_X - 6.5, 1.5, 5]));
 
     // ---------------------------------------------------------- proof-2 cloud
     const cloud = new THREE.Group();
@@ -155,12 +160,11 @@ export class ProofScene extends BaseScene {
     cloud.add(new THREE.Points(rg, new THREE.PointsMaterial({ size: 0.95, vertexColors: true, map: dot(), transparent: true, alphaTest: 0.2, depthWrite: true, sizeAttenuation: true })));
     // six regions the data does not reach
     this.pockets = [];
-    const spots = [[-26, 16, 4], [-24, 4, -12], [24, 20, -14], [28, 6, 12], [-6, 29, -4], [-6, -5, 16]];
-    spots.forEach(([x, y, z]) => {
+    POCKETS.forEach(([x, y, z]) => {
       const s = new THREE.Mesh(new THREE.SphereGeometry(3.4, 16, 12), new THREE.MeshBasicMaterial({ color: COL.alarm, wireframe: true, transparent: true, opacity: 0.55 }));
       s.position.set(x, y, z); cloud.add(s); this.pockets.push(s);
     });
-    this._poses();
+    this._frames();
     this._tags();
     this.built = true;
   }
@@ -172,29 +176,34 @@ export class ProofScene extends BaseScene {
     return l;
   }
 
-  _poses() {
-    this.poses = {
-      'proof-1': { pos: [8, 28, 78], target: [8, -7, 0], fov: 40, parallax: 0.5 },
-      'proof-2': { pos: [8, 48, 100], target: [8, -4, 0], fov: 40, parallax: 0.7 },
+  // What must be in the picture for each step. The camera is worked out from the stage (see core/frame.js).
+  _frames() {
+    this.frames = {
+      // the chart and the locked test, with room for the labels under the bars, above the lock and left of the first bar
+      'proof-1': { pts: [...boxPts(0, 7.8, 0, 56, 15.6, 14), ...boxPts(TEST_X, 6.5, 0, 16, 13, 13), [TEST_X, 19.5, 0], [-37, 9, 0], [0, -5.2, 6], [20, -5.2, 6]], az: 0, el: 16, fov: 28, pad: [0.03, 0.05], parallax: 0.3 },
+      // the cloud of synthetic images and the six regions it does not reach
+      'proof-2': { pts: [...boxPts(0, 11, 0, 32, 22, 22), ...POCKETS.flatMap(([x, y, z]) => boxPts(x, y, z, 7, 7, 7)), [-36, 15, 3], [36, 18, -12], [0, 33, -3], [26, -4, 13], [-34, 4, -10]], az: -6, el: 24, fov: 30, pad: [0.04, 0.06], parallax: 0.35 },
     };
   }
+
+  pose(id) { return fitFrame(this.frames[id], this.app.layout.aspect); }
 
   _tags() {
     const t = this.app.tags;
     const at = (x, y, z) => new THREE.Vector3(x, y, z);
     GROUPS.forEach((grp, k) => {
-      t.add({ id: `pf-g${k}`, text: grp.name, sub: grp.sub, anchor: at(GX(k) - 2.5, BAR_H + 5.4, 0), side: 'r', len: 12, color: k === 0 ? COL.slate : COL.real, big: k === 0 });
+      t.add({ id: `pf-g${k}`, text: grp.name, sub: grp.sub, anchor: at(GX(k), 0.85, 5.6), side: 'd', len: 12, color: k === 0 ? COL.slate : COL.real, big: k === 0 });
     });
-    t.add({ id: 'pf-test', text: 'Locked test', sub: '261 BRACOL leaves', anchor: at(44, 13.4, 1.2), side: 'l', len: 22, color: COL.real, big: true });
-    t.add({ id: 'pf-metric', text: 'Score: AUC', sub: 'higher is better', anchor: at(GX(0) - 5.4, 0.8 + BAR_H * 0.55, 1.6), side: 'l', len: 18, color: COL.ink });
+    t.add({ id: 'pf-test', text: 'Locked test', sub: '261 BRACOL leaves', anchor: at(TEST_X, 14.2, 1.2), side: 'u', len: 14, color: COL.real, big: true });
+    t.add({ id: 'pf-metric', text: 'Score: AUC', sub: 'higher is better', anchor: at(GX(0) - 4.55, 0.8 + BAR_H * 0.55, 1.6), side: 'l', len: 18, color: COL.ink });
     t.add({ id: 'pc-x', text: 'Light', sub: 'dawn to overcast', anchor: at(16, 0, 11), side: 'r', len: 30, color: COL.slate });
     t.add({ id: 'pc-y', text: 'Backdrop', sub: 'plain to cluttered', anchor: at(-16, 22, 11), side: 'l', len: 30, color: COL.slate });
     t.add({ id: 'pc-z', text: 'Rust severity', sub: '0 to 4', anchor: at(16, 0, -11), side: 'r', len: 30, color: COL.slate });
     t.add({ id: 'pc-sim', text: 'Synthetic images', sub: 'fill the space', anchor: at(2, 16, 2), side: 'r', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'pc-real', text: 'Real photos', sub: 'a thin slice', anchor: at(9, 2.2, 7), side: 'r', len: 36, color: COL.real, big: true });
+    t.add({ id: 'pc-real', text: 'Real photos', sub: 'a thin slice', anchor: at(9, 2.2, 7), side: 'l', len: 30, color: COL.real, big: true });
     ['Farm photos', 'Other diseases', 'Clean renders', 'A small test', 'Phones', 'Languages'].forEach((n, i) => {
-      const p = [[-26, 16, 4], [-24, 4, -12], [24, 20, -14], [28, 6, 12], [-6, 29, -4], [-6, -5, 16]][i];
-      t.add({ id: `pc-g${i}`, text: `<b class="num">${i + 1}</b>${n}`, anchor: at(p[0], p[1], p[2]), side: p[0] > 8 ? 'r' : 'l', len: 26, color: COL.alarm });
+      const p = POCKETS[i];
+      t.add({ id: `pc-g${i}`, text: `<b class="num">${i + 1}</b>${n}`, anchor: at(p[0], p[1], p[2]), side: i === 4 ? 'u' : i === 5 ? 'd' : p[0] > 8 ? 'r' : 'l', len: 16, color: COL.alarm });
     });
   }
 

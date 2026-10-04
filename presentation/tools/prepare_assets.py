@@ -2,7 +2,8 @@
 """Pick the best renders and real photos for the talk, shrink them, and write src/assets/.
 
 Run from the presentation folder, then rebuild:
-  python3 tools/prepare_assets.py
+  python3 tools/prepare_assets.py          everything
+  python3 tools/prepare_assets.py --lab    only the leaf lab pictures and src/labData.js (they come from ../presentation-v2)
   npm run build
 
 Sources are in the ShhS repo root (data/synthetic, data/field, BRACOL_coffee_leaf_images, data/bracol).
@@ -10,7 +11,11 @@ To swap in a better render, change its path in the tables below and run this aga
 Every image in the talk comes from one of these tables, so it is easy to check where it came from.
 """
 import csv
+import json
 import os
+import re
+import random
+import shutil
 import sys
 from pathlib import Path
 
@@ -23,6 +28,8 @@ OUT = HERE / "src" / "assets"
 BRACOL_IMG = ROOT / "BRACOL_coffee_leaf_images" / "images"
 MANIFEST = ROOT / "data" / "bracol" / "manifest.csv"
 FIELD = ROOT / "data" / "field" / "uganda"
+V2 = ROOT / "presentation-v2"                           # the scroll site: the leaf lab (photo, cut-out, 3D leaf, eight scenes) comes from here
+LAB_PREFIX = "leaf_"                                    # the lab pictures keep this prefix. A run without presentation-v2 leaves them alone.
 
 # --- the same leaf (BRACOL 897, rust severity 4) in seven worlds, after the phone effects ------
 WORLDS = {
@@ -75,6 +82,15 @@ CLOSE = {
 TRAIN_LEAVES = [960, 897, 1664, 895, 1016, 365, 1741, 1046, 891]
 # --- cut-outs for the severity ladder: severity 0 to 4 --------------------------------------
 CUTOUTS = {0: 960, 1: 1664, 2: 1741, 3: 1046, 4: 897}
+# --- the leaf lab: one leaf (BRACOL 897) through six stages. Pictures and numbers come from presentation-v2 ---
+# key, name on the chip, the order the scenes are listed in. The files are presentation-v2/img/dial/897_<key>_raw.webp and _phone.webp.
+LAB_PRESETS = [("overcast", "Overcast"), ("sun", "Sun"), ("golden", "Golden hour"), ("shade", "Shade"),
+               ("backlit", "Backlit"), ("rain", "Rain"), ("sun_wet", "After rain"), ("studio", "Studio")]
+# the three renders of leaf 897 that are in set 1 (data/synthetic/v1/jobs.json has exactly three jobs for it)
+LAB_TRAIN = ["v0897_whole_0", "v0897_closeup_1", "v0897_whole_2"]
+# the numbers of one render that the readouts show (the rest of the Blender log stays out)
+LAB_META_KEYS = ["light", "sky", "sun_el", "sun_az", "kelvin", "sun_energy", "exposure_ev", "lens_mm", "fstop", "cam_tilt_deg",
+                 "cam_dist_m", "leaf_len_m", "cover", "render_s", "seed", "phone"]
 
 written = []
 
@@ -104,10 +120,74 @@ def mosaic(paths, cols, rows, tw, th, gap, bg=(247, 248, 252)):
     return sheet
 
 
+def copy_webp(src, name):
+    """Copy a picture that is already a small WebP, as it is. A second encode would only lose quality."""
+    dst = OUT / f"{name}.webp"
+    shutil.copyfile(src, dst)
+    written.append((name, "webp", os.path.getsize(dst)))
+
+
+def lab():
+    """The leaf lab: the photo, the cut-out, eight renders (raw and with phone effects) and the numbers behind them.
+
+    Everything is copied from presentation-v2, then src/labData.js is written from its data files.
+    Without presentation-v2 the lab pictures and labData.js already in the folder stay as they are."""
+    img = V2 / "img"
+    if not img.exists():
+        have = len(list(OUT.glob(f"{LAB_PREFIX}*")))
+        print(f"presentation-v2 not found: the {have} lab pictures already in src/assets stay as they are")
+        return
+    copy_webp(img / "pipeline" / "897_original.webp", f"{LAB_PREFIX}photo")
+    copy_webp(img / "pipeline" / "897_cutout.webp", f"{LAB_PREFIX}cutout")
+    for i, tid in enumerate(LAB_TRAIN):
+        copy_webp(img / "pipeline" / f"{tid}.webp", f"{LAB_PREFIX}train_{i}")
+    meta = json.load(open(img / "dial" / "dial_meta.json"))
+    whole = {it["preset"]: it for it in meta["items"] if it["mode"] == "whole"}
+    presets = []
+    for key, name in LAB_PRESETS:
+        it = whole[key]
+        copy_webp(img / "dial" / it["file_raw"], f"{LAB_PREFIX}{key}_raw")
+        copy_webp(img / "dial" / it["file_phone"], f"{LAB_PREFIX}{key}_phone")
+        m = it["meta"]
+        presets.append({"key": key, "name": name, "raw": f"{LAB_PREFIX}{key}_raw", "phone": f"{LAB_PREFIX}{key}_phone",
+                        "meta": {k: m[k] for k in LAB_META_KEYS if k in m}})
+    # the lesions and the training renders of this leaf are in the generated data of presentation-v2
+    gen = (V2 / "src" / "data" / "generated.js").read_text()
+    pipe, _ = json.JSONDecoder().raw_decode(gen[gen.index("export const PIPELINE = ") + len("export const PIPELINE = "):])
+    counts, _ = json.JSONDecoder().raw_decode(gen[gen.index("export const COUNTS = ") + len("export const COUNTS = "):])
+    train = [{"id": t["id"], "img": f"{LAB_PREFIX}train_{i}", "preset": t["preset"], "mode": t["mode"], "seed": t["seed"], "w": t["w"], "h": t["h"]}
+             for i, t in enumerate(pipe["trainRenders"])]
+    assert [t["id"] for t in train] == LAB_TRAIN, "the training renders in presentation-v2 changed: update LAB_TRAIN"
+    # set 1, render by render: whether the leaf it was made from has rust, and where the renders of this leaf sit in the list
+    jobs = json.load(open(SYN / "v1" / "jobs.json"))
+    bracol = {r["id"]: r for r in csv.DictReader(open(MANIFEST))}
+    set1 = {
+        "n": len(jobs),
+        "rustFlags": "".join("1" if bracol[str(j["leaf"])]["rust"] == "1" else "0" for j in jobs),
+        "thisLeaf": [i for i, j in enumerate(jobs) if j["leaf"] == pipe["leafId"]],
+    }
+    assert set1["n"] == counts["synthetic"]["v1"] and len(set1["thisLeaf"]) == len(pipe["trainRenders"]), "set 1 changed: check presentation-v2 and data/synthetic/v1"
+    data = {
+        "leaf": {"id": pipe["leafId"], "labels": pipe["labels"], "textureW": pipe["textureW"], "textureH": pipe["textureH"]},
+        "lesions": pipe["lesions"],
+        "presets": presets,
+        "train": train,
+        "counts": {"texturesUsable": counts["textures"]["usable"], "texturesOfTrain": counts["textures"]["ofTrain"], "setV1": counts["synthetic"]["v1"]},
+        "set1": set1,
+    }
+    body = ["// Generated by tools/prepare_assets.py from presentation-v2. Do not edit by hand.",
+            "// The numbers are the real log of each render (Blender job and phone effects), not made-up values.", ""]
+    for key, label in (("leaf", "LEAF"), ("lesions", "LESIONS"), ("presets", "PRESETS"), ("train", "TRAIN"), ("counts", "COUNTS"), ("set1", "SET1")):
+        text = json.dumps(data[key], indent=1)
+        text = re.sub(r"\[\s+([-0-9.eE,\s]+?)\s+\]", lambda m: "[" + re.sub(r"\s+", " ", m.group(1)) + "]", text)   # numbers on one line
+        body.append(f"export const {label} = {text};")
+    (HERE / "src" / "labData.js").write_text("\n".join(body) + "\n")
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for f in OUT.glob("*"):
-        if f.suffix in (".jpg", ".webp"):
+        if f.suffix in (".jpg", ".webp") and not f.name.startswith(LAB_PREFIX):
             f.unlink()
 
     # the real photo that opens the reveal. The leaf sits where the rendered leaf sits (centre at 45.5% across,
@@ -189,24 +269,44 @@ def main():
     rust_t = [r for r in train if r["rust"] == "1"]
     other_t = [r for r in train if r["rust"] != "1"]
     pick = lambda lst, n: [lst[round(i * (len(lst) - 1) / (n - 1))] for i in range(n)]
-    ids = [r["id"] for pair in zip(pick(other_t, 24), pick(rust_t, 24)) for r in pair]
-    save(mosaic([BRACOL_IMG / f"{i}.jpg" for i in ids], 6, 8, 192, 96, 6), "mosaic_plain", quality=74)
+    # BRACOL as a wall: 4 by 8 leaves on plain backgrounds, rust and no rust taking turns. Big tiles, so each leaf can be read.
+    ids = [r["id"] for pair in zip(pick(other_t, 16), pick(rust_t, 16)) for r in pair]
+    save(mosaic([BRACOL_IMG / f"{i}.jpg" for i in ids], 4, 8, 256, 128, 6), "mosaic_plain", quality=78)
+    # the Kenya sample (128 px photos, the size of the copy we have): 35 of 197, drawn with a fixed seed so the classes are mixed
     kenya = sorted((ROOT / "data" / "field" / "kenya" / "images").glob("*.jpg"))
-    save(mosaic(pick(kenya, 98), 14, 7, 96, 96, 4), "mosaic_kenya", quality=72)
+    save(mosaic(random.Random(11).sample(kenya, 35), 7, 5, 128, 128, 4), "mosaic_kenya", quality=80)
+    # the two photo grids of the data-gap step: 32 lab photos (BRACOL) and 32 farm photos (Uganda), 8 by 4
+    lab_ids = [r["id"] for pair in zip(pick(other_t, 16), pick(rust_t, 16)) for r in pair]
+    save(mosaic([BRACOL_IMG / f"{i}.jpg" for i in lab_ids], 8, 4, 192, 96, 6), "mosaic_lab", quality=76)
+    save(mosaic([ROOT / r["image"] for r in pick(fm, 32)], 8, 4, 128, 128, 4), "mosaic_farm", quality=74)
 
-    # the index the code imports from
-    names = sorted(n for n, _, _ in written)
-    ext = {n: e for n, e, _ in written}
+    # the leaf lab (presentation-v2)
+    lab()
+    write_index()
+
+
+def write_index():
+    """The index the code imports from. It lists every picture in the folder, so the lab pictures stay in it
+    when this script runs without presentation-v2."""
+    files = sorted((p for p in OUT.iterdir() if p.suffix in (".jpg", ".webp")), key=lambda p: p.stem)
+    names = [p.stem for p in files]
+    ext = {p.stem: p.suffix[1:] for p in files}
     lines = ["// Generated by tools/prepare_assets.py. Do not edit by hand.", ""]
     lines += [f"import {n} from './{n}.{ext[n]}';" for n in names]
     lines += ["", "export const IMG = {", *[f"  {n}," for n in names], "};", ""]
     (OUT / "index.js").write_text("\n".join(lines))
 
-    total = sum(s for _, _, s in written)
-    for n, e, s in sorted(written):
+    sizes = [(p.stem, p.suffix[1:], p.stat().st_size) for p in files]
+    total = sum(s for _, _, s in sizes)
+    for n, e, s in sizes:
         print(f"{n}.{e:5} {s / 1024:7.1f} KB")
-    print(f"\n{len(written)} files, {total / 1024 / 1024:.2f} MB (about {total * 1.34 / 1024 / 1024:.1f} MB once inlined)")
+    print(f"\n{len(sizes)} files, {total / 1024 / 1024:.2f} MB (about {total * 1.34 / 1024 / 1024:.1f} MB once inlined)")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if "--lab" in sys.argv[1:]:          # only the leaf lab pictures and src/labData.js, the rest stays as it is
+        OUT.mkdir(parents=True, exist_ok=True)
+        lab()
+        write_index()
+    else:
+        sys.exit(main())

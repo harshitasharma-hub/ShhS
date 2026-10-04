@@ -10,6 +10,7 @@ We made them because BRACOL has one kind of picture: a whole leaf on a plain bac
 | --- | --- |
 | `v1/` | 1353 training photos made from 1221 train leaves. `images/`, `meta/` (the render settings of each photo) and `manifest.csv`. |
 | `v2/` | 1353 more training photos from the same leaves, made with the same recipe and new random seeds. Same format as v1. |
+| `v3/` | 1353 training photos, a complete replacement for v1. The healthy and rust photos are copied from v1 unchanged. The other-disease leaves are new hard negatives with a yellow, golden or orange rim around the dark lesions. See below. |
 | `unusable/` | 150 photos that no model should judge. For testing the 'not sure' answer only. Never train on them. |
 | `textures/` | The leaf cut-outs the renders use: 1221 of 1225 train leaves passed the mask checks. Rebuild them with the scripts below. |
 | `probe*` | Early test renders. They are not part of any experiment. |
@@ -45,6 +46,14 @@ Sizes in pixels: 1024x512 (504), 512x512 (207), 896x672 (200), 256x256 (185), 38
 5. `phone_effects.py` adds what a phone does to the picture: white balance drift, contrast, sharpening, blur, a smaller size, sensor noise, vignette, JPEG damage, and sometimes rain streaks.
 
 `generate.py` plans and runs all of this. The same seed gives the same photo.
+
+## v3: orange is not always rust
+
+A model trained on v1 called other-disease leaves 'rust' on real Uganda photos. In v1, orange shows up almost only on rust leaves, so the model learned that orange means rust. Real phoma and cercospora photos have big dark lesions with a yellow or orange rim.
+
+v3 fixes that. It has 1353 photos, the same size as v1. 806 are copied from v1 unchanged, including every rust close-up. 547 are new renders of leaves with another disease and no rust. `add_rims.py` finds the brown lesions in the real texture and paints a soft yellow, golden or orange rim around them, in Lab colour so the veins still show. White holes inside a lesion are filled with dead brown tissue. Most of the new photos are close-ups aimed at a big lesion, framed tight so the lesion and its rim fill much of the picture. The label stays 'no rust' because the source leaf has no rust.
+
+Rust leaves are never painted. A close-up of a painted rust leaf could show a rimmed lesion and no rust, and the label would be wrong.
 
 ## How to use them
 

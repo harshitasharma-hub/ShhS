@@ -1,0 +1,43 @@
+{
+ "run": "mix-v3_d140_f10_s2",
+ "field": "uganda",
+ "all_photos": false,
+ "n": 300,
+ "auc": 0.9455333333333333,
+ "accuracy": 0.9,
+ "sensitivity": 0.88,
+ "specificity": 0.92,
+ "precision": 0.9166666666666666,
+ "f1": 0.8979591836734694,
+ "auc_ci95": [
+  0.9132669688897074,
+  0.9709191490928716
+ ],
+ "accuracy_ci95": [
+  0.8633333333333333,
+  0.9333333333333333
+ ],
+ "threshold_from_bracol_val": -1.125,
+ "by_group": {
+  "healthy": {
+   "n": 93,
+   "correct": 0.956989247311828
+  },
+  "other": {
+   "n": 57,
+   "correct": 0.8596491228070176
+  },
+  "rust": {
+   "n": 150,
+   "correct": 0.88
+  }
+ },
+ "if_threshold_tuned_on_field": {
+  "threshold": -1.125,
+  "accuracy": 0.9,
+  "sensitivity": 0.88,
+  "specificity": 0.92,
+  "precision": 0.9166666666666666,
+  "f1": 0.8979591836734694
+ }
+}

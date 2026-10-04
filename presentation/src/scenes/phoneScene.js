@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { BaseScene } from './baseScene.js';
-import { COL, matte, studioLights, plinth, RoundedBoxGeometry, edges, loadImage, whenLoaded, drawCover } from './diagram.js';
+import { COL, matte, studioLights, fitShadow, plinth, RoundedBoxGeometry, edges, loadImage, whenLoaded, drawCover } from './diagram.js';
 import { damp, easeOut } from '../core/math.js';
+import { fitFrame, boxPts } from '../core/frame.js';
 
 // Noor's phone, and the optional cooperative hub. The screen shows three moments in a loop:
 // the camera, a result with a plain next step, and an honest "not sure".
@@ -93,6 +94,7 @@ export class PhoneScene extends BaseScene {
   build() {
     const g = this.group;
     this.rig = studioLights(g, 90);
+    fitShadow(this.rig, 16, 22, 32);
     this.t = 0;
     this.hubOn = false;
     this.states = ['camera', 'result', 'camera', 'notsure'];
@@ -172,7 +174,7 @@ export class PhoneScene extends BaseScene {
     const line = new THREE.Line(lineG, new THREE.LineDashedMaterial({ color: COL.healthy, dashSize: 0.5, gapSize: 0.35 }));
     line.computeLineDistances(); hub.add(line);
 
-    this._poses();
+    this._frames();
     this._tags();
     this.built = true;
   }
@@ -182,22 +184,27 @@ export class PhoneScene extends BaseScene {
     this.screenTex.needsUpdate = true;
   }
 
-  _poses() {
-    this.poses = {
-      'hands-1': { pos: [4, 15, 46], target: [4, 7, 0], fov: 36, parallax: 0.6 },
-      'hands-2': { pos: [14, 17, 62], target: [14, 6, 0], fov: 40, parallax: 0.6 },
+  // What must be in the picture for each step. The camera is worked out from the stage (see core/frame.js).
+  _frames() {
+    const phone = boxPts(4, 10.4, 0, 9.4, 18, 2.4), plinth = boxPts(4, 0.4, 0, 22, 0.8, 16), chips = boxPts(14.5, 10.4, 1, 5, 7, 1);
+    this.frames = {
+      // the phone is the hero: tall, with the three answers beside it and the labels around it
+      'hands-1': { pts: [...phone, ...plinth, ...chips, [-7, 20.5, 0], [24, 18.5, 0], [26, 3, 1]], az: -8, el: 12, fov: 30, pad: [0.04, 0.05], parallax: 0.35 },
+      'hands-2': { pts: [...phone, ...plinth, ...boxPts(30, 4, 2, 16, 8, 12), [-7, 20.5, 0], [30, 14, 0], [40, 10, 0]], az: -8, el: 14, fov: 30, pad: [0.04, 0.05], parallax: 0.35 },
     };
   }
+
+  pose(id) { return fitFrame(this.frames[id], this.app.layout.aspect); }
 
   _tags() {
     const t = this.app.tags;
     const at = (x, y, z) => new THREE.Vector3(x, y, z);
-    t.add({ id: 'h-sketch', text: 'Design sketch', sub: 'a mockup, not a working app', anchor: at(-0.2, 19.4, 0.6), side: 'l', len: 30, color: COL.slate });
-    t.add({ id: 'h-offline', text: 'Offline', sub: 'no signal, no data bundle', anchor: at(8.4, 17.8, 0.6), side: 'r', len: 40, color: COL.healthy, big: true });
-    t.add({ id: 'h-list', text: 'Three answers', sub: 'rust, no rust, or not sure', anchor: at(14.5, 14.2, 1), side: 'r', len: 26, color: COL.ink, big: true });
-    t.add({ id: 'h-human', text: 'A person decides', sub: 'it says "not sure" and points to the officer', anchor: at(-0.2, 3.2, 0.6), side: 'l', len: 44, color: COL.alarm, big: true });
-    t.add({ id: 'h-hub', text: 'Cooperative laptop', sub: 'second opinion over local Wi-Fi', anchor: at(30, 9.4, 0), side: 'r', len: 30, color: COL.ink, big: true });
-    t.add({ id: 'h-link', text: 'Local Wi-Fi', sub: 'no internet needed', anchor: at(15, 11, 0), side: 'r', len: 24, color: COL.healthy });
+    t.add({ id: 'h-sketch', text: 'Design sketch', sub: 'a mockup, not a working app', anchor: at(4, 19.7, 0.6), side: 'u', len: 14, color: COL.slate });
+    t.add({ id: 'h-offline', text: 'Offline', sub: 'no signal, no data bundle', anchor: at(8.4, 17.2, 0.6), side: 'r', len: 22, color: COL.healthy, big: true });
+    t.add({ id: 'h-list', text: 'Three answers', sub: 'rust, no rust, or not sure', anchor: at(14.5, 13.9, 1), side: 'r', len: 18, color: COL.ink, big: true });
+    t.add({ id: 'h-human', text: 'A person decides', sub: 'it says "not sure" and points to the officer', anchor: at(8.3, 3.2, 1.2), side: 'r', len: 24, color: COL.alarm, big: true });
+    t.add({ id: 'h-hub', text: 'Cooperative laptop', sub: 'second opinion over local Wi-Fi', anchor: at(30, 8.4, 0), side: 'u', len: 14, color: COL.ink, big: true });
+    t.add({ id: 'h-link', text: 'Local Wi-Fi', sub: 'no internet needed', anchor: at(16, 11.5, 0), side: 'u', len: 14, color: COL.healthy });
   }
 
   enter(id) {
@@ -213,7 +220,7 @@ export class PhoneScene extends BaseScene {
       this.hubOn = ev.mode === 'hub';
       this._modeButtons();
       this.app.tags.only(this.hubOn ? ['h-sketch', 'h-hub', 'h-link', 'h-offline'] : ['h-sketch', 'h-offline', 'h-list', 'h-human']);
-      this.app.rig.flyTo(this.hubOn ? this.poses['hands-2'] : this.poses['hands-1'], 1.4);
+      this.app.rig.flyTo(this.pose(this.hubOn ? 'hands-2' : 'hands-1'), 1.4);
     }
   }
 

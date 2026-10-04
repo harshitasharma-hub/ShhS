@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { BaseScene } from './baseScene.js';
-import { COL, makeImageCard, imageTexture, Flow, guide, plinth, edges, matte, studioLights, RoundedBoxGeometry, loadImage, whenLoaded, drawCover } from './diagram.js';
+import { COL, GFX, makeImageCard, imageTexture, Flow, guide, plinth, edges, matte, studioLights, fitShadow, RoundedBoxGeometry, loadImage, whenLoaded, drawCover } from './diagram.js';
 import { damp, easeOut } from '../core/math.js';
 import { LABELED } from '../showcase.js';
+import { fitFrame, standing, boxPts } from '../core/frame.js';
 
 // The plan, as a model you can walk around.
 //   back row:  Blender leaf -> Blender scene -> render -> synthetic set   (all synthetic)
@@ -11,8 +12,23 @@ import { LABELED } from '../showcase.js';
 // Nothing here spreads or grows. Every picture on a card is a real photo or a real render (src/assets).
 // Only the boxes, the model and the charts are drawn.
 
+// A grid of two rows and four columns. Back row: the renders get made. Front row: the real photos, the model, the test.
 const P = {
-  real: [0, 0, 10], scar: [-27, 0, 10], s1: [-24, 0, -14], s2: [0, 0, -14], s3: [24, 0, -14], s4: [48, 0, -14], s5: [38, 0, 10], s6: [72, 0, 10],
+  scar: [-24, 0, 10], real: [0, 0, 10], s5: [24, 0, 10], s6: [48, 0, 10], s1: [-24, 0, -14], s2: [0, 0, -14], s3: [24, 0, -14], s4: [48, 0, -14],
+};
+// footprint (width, depth) and height of each station, with what stands on or in front of it, for framing
+const ST = {
+  real: [15, 8, 8], s1: [17, 11, 6], s2: [20, 14, 10], s3: [17, 11, 8.5], s4: [20, 11, 8], s5: [18, 18, 9], s6: [15, 17, 5.5], scar: [21, 11, 10],
+};
+// the station k as points. Front stations carry their bars and bench, which stand out toward the camera.
+const stationPts = (k) => {
+  const [w, d, h] = ST[k];
+  const z = k === 's5' ? P[k][2] + 3.5 : k === 's6' ? P[k][2] + 3 : P[k][2];
+  const x = k === 's5' ? P[k][0] + 1.2 : P[k][0];
+  const pts = standing(x, z, w, d, h);
+  pts.push([P[k][0], h + 5.5, P[k][2]]);                 // room for the label above
+  if (k === 's5') pts.push([P[k][0] - 2, -2.2, P[k][2] + 9.4]);   // and for the labels under the three bars
+  return pts;
 };
 
 const STEPS = ['rec-1', 'rec-2', 'rec-3', 'rec-4', 'rec-5', 'rec-6', 'rec-7', 'rec-8'];
@@ -47,7 +63,7 @@ function textPlane(w, h, draw, px = 512) {
   const ctx = c.getContext('2d');
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = GFX.aniso;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide }));
   m.userData.redraw = () => { ctx.clearRect(0, 0, c.width, c.height); draw(ctx, c.width, c.height); tex.needsUpdate = true; };
   m.userData.redraw();
@@ -98,6 +114,7 @@ export class PipelineScene extends BaseScene {
   build(progress) {
     const g = this.group;
     this.rig = studioLights(g, 130);
+    fitShadow(this.rig, 12, 56, 46);
     this.items = {};
     this.flows = [];
     this.t = 0;
@@ -121,7 +138,7 @@ export class PipelineScene extends BaseScene {
     reg('real2', this._realBranch(), [0, 0, 0]);
     reg('scar', this._scar(), P.scar);
     progress && progress(0.8);
-    this._poses();
+    this._frames();
     this._tags();
     this.built = true;
   }
@@ -142,10 +159,10 @@ export class PipelineScene extends BaseScene {
     g.add(wall);
     // the train photos travel to the model
     const items = [];
-    for (let i = 0; i < 7; i++) { const c = makeImageCard(WALL[(i * 2) % WALL.length], COL.real, null, 0.7); g.add(c); items.push(c); }
-    const f = new Flow([[8, 1.6, 0], [16, 1.6, 0], [24, 1.6, 0], [30, 1.6, 0]], items, { speed: 0.06, fade: 0.1 });
+    for (let i = 0; i < 4; i++) { const c = makeImageCard(WALL[(i * 2) % WALL.length], COL.real, null, 0.7); g.add(c); items.push(c); }
+    const f = new Flow([[8.6, 1.6, 0], [12, 1.6, 0], [15.4, 1.6, 0]], items, { speed: 0.05, fade: 0.14 });
     f.group = 'real'; this.flows.push(f);
-    g.userData.guide = guide([[8, 0.4, 0.2], [18, 0.4, 0.2], [30, 0.4, 0.2]], COL.real, 0.6);
+    g.userData.guide = guide([[8.6, 0.4, 0.2], [12, 0.4, 0.2], [15.4, 0.4, 0.2]], COL.real, 0.6);
     g.add(g.userData.guide);
     return g;
   }
@@ -353,7 +370,7 @@ export class PipelineScene extends BaseScene {
   _synBranch() {
     // the renders join the real photos at the model
     const g = new THREE.Group();
-    const pts = [[48, 2.0, -8], [45, 2.6, -2], [41, 2.6, 3], [39, 2.4, 5.4]];
+    const pts = [[48, 2.0, -8], [42, 2.6, -2], [32, 2.6, 3], [27, 2.4, 5.4]];
     g.add(guide(pts, COL.sim, 0.6));
     const items = [];
     for (let i = 0; i < 5; i++) { const c = makeImageCard(SET[(i * 3 + 1) % SET.length], COL.sim, null, 0.6); g.add(c); items.push(c); }
@@ -365,10 +382,10 @@ export class PipelineScene extends BaseScene {
   _realBranch() {
     // real test photos go to the test bench and never to training
     const g = new THREE.Group();
-    g.add(guide([[6, 0.3, 12], [26, 0.3, 17], [50, 0.3, 17], [66, 0.3, 14]], COL.real, 0.55));
+    g.add(guide([[6, 0.3, 12], [16, 0.3, 17], [34, 0.3, 17], [42, 0.3, 14]], COL.real, 0.55));
     const items = [];
     for (let i = 0; i < 4; i++) { const c = makeImageCard(i % 2 ? FARMS[(i + 1) % 4] : TESTS[(i + 2) % 4], COL.real, null, 0.6); g.add(c); items.push(c); }
-    const f = new Flow([[6, 1.0, 12], [26, 1.0, 17], [50, 1.0, 17], [66, 1.4, 14]], items, { speed: 0.04, fade: 0.1 });
+    const f = new Flow([[6, 1.0, 12], [16, 1.0, 17], [34, 1.0, 17], [42, 1.4, 14]], items, { speed: 0.04, fade: 0.1 });
     f.group = 'real2'; this.flows.push(f);
     return g;
   }
@@ -464,43 +481,51 @@ export class PipelineScene extends BaseScene {
   }
 
   // ------------------------------------------------------------ camera + tags
-  _poses() {
-    // the text card sits low and left, so each station is framed up and to the right
-    this.poses = {
-      'rec-1': { pos: [34, 46, 104], target: [34, -14, 8], fov: 40, parallax: 0.5 },
-      'rec-2': { pos: [-12, 32, 44], target: [-12, -4, -12], fov: 38, parallax: 0.5 },
-      'rec-3': { pos: [24, 18, 20], target: [24, 3, -14], fov: 36, parallax: 0.5 },
-      'rec-4': { pos: [43, 30, 34], target: [40, 0, -14], fov: 36, parallax: 0.5 },
-      'rec-5': { pos: [34, 30, 58], target: [37, 1, 6], fov: 36, parallax: 0.5 },
-      'rec-6': { pos: [-24, 30, 50], target: [-24, 0, 6], fov: 38, parallax: 0.5 },
-      'rec-7': { pos: [70, 22, 38], target: [68, 1, 11], fov: 34, parallax: 0.5 },
-      'rec-8': { pos: [26, 90, 80], target: [26, -10, 2], fov: 44, parallax: 0.4 },
+  // What must be in the picture for each step. The camera is worked out from the stage (see core/frame.js).
+  _frames() {
+    const f = (keys, extra = [], o = {}) => ({ pts: [...keys.flatMap(stationPts), ...extra], az: -6, el: 36, fov: 30, pad: [0.05, 0.08], parallax: 0.3, ...o });
+    this.frames = {
+      // three stations in a row are wide and short, so the row runs on a diagonal to use the height of the stage
+      'rec-1': f(['real', 's5', 's6'], [], { az: -24, el: 34 }),
+      'rec-2': f(['s1', 's2']),
+      'rec-3': f(['s2', 's3']),
+      'rec-4': f(['s3', 's4'], [[37, 3, 2]]),
+      'rec-5': f(['real', 's5', 's6']),
+      'rec-6': f(['scar', 'real'], [], { az: 0, el: 32 }),
+      'rec-7': f(['s5', 's6']),
+      'rec-8': f(['scar', 'real', 's5', 's6', 's1', 's2', 's3', 's4'], [], { el: 46, az: 0, pad: [0.03, 0.06] }),
     };
   }
+
+  pose(id) { return fitFrame(this.frames[id], this.app.layout.aspect); }
 
   _tags() {
     const t = this.app.tags;
     const at = (x, y, z) => new THREE.Vector3(x, y, z);
-    t.add({ id: 'p-real', text: 'BRACOL', sub: 'real leaves · train 1,225 · test 261', anchor: at(-4.8, 6.7, 9.6), side: 'l', len: 20, color: COL.real, big: true });
-    t.add({ id: 'p-s1', text: 'Blender leaf', sub: '3D leaf, real BRACOL skin, severity 0 to 4', anchor: at(...P.s1).add(at(0, 5.8, 0)), side: 'l', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'p-s2', text: 'Blender scene', sub: 'leaf, light, camera, render', anchor: at(...P.s2).add(at(0, 9.6, 0)), side: 'r', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'p-s3', text: 'Render', sub: 'an image and its label, every time', anchor: at(...P.s3).add(at(0, 10.4, 0)), side: 'r', len: 36, color: COL.sim, big: true });
-    t.add({ id: 'p-s4', text: 'Synthetic set', sub: 'images + manifest.csv', anchor: at(...P.s4).add(at(0, 7.6, 0)), side: 'r', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'p-blender', text: 'Blender', sub: 'leaf, scene, render', anchor: at(10, 9.4, -14), side: 'r', len: 40, color: COL.sim, big: true });
-    t.add({ id: 'p-syn', text: 'Renders join the real photos', anchor: at(44, 3.4, -1), side: 'r', len: 30, color: COL.sim });
-    t.add({ id: 'p-s5', text: 'Gemma 4 E2B', sub: '2.3B effective parameters', anchor: at(P.s5[0] - 4.3, 9.4, P.s5[2] + 3), side: 'l', len: 26, color: COL.ink, big: true });
-    t.add({ id: 'p-frozen', text: 'Frozen', sub: 'the base model', anchor: at(P.s5[0] - 4.3, 3.4, P.s5[2]), side: 'l', len: 26, color: '#9aa3c6' });
-    t.add({ id: 'p-train', text: 'LoRA', sub: 'a thin layer we train', anchor: at(P.s5[0] + 4.6, 7.2, P.s5[2]), side: 'r', len: 26, color: COL.ink });
-    t.add({ id: 'p-out', text: 'Answers', sub: 'rust · no rust · not sure', anchor: at(P.s5[0] + 6.4, 3.9, P.s5[2]), side: 'r', len: 36, color: COL.alarm });
-    t.add({ id: 'p-pa', text: 'Real only', sub: 'step 1', anchor: at(P.s5[0] - 5.4, 5.6, P.s5[2] + 7.2), side: 'l', len: 20, color: COL.real });
-    t.add({ id: 'p-pb', text: 'Renders only', sub: 'step 3', anchor: at(P.s5[0] - 3.3, 7.8, P.s5[2] + 7.2), side: 'r', len: 16, color: COL.sim });
-    t.add({ id: 'p-pc', text: 'Renders + real', sub: 'step 4', anchor: at(P.s5[0] - 1.2, 5.6, P.s5[2] + 7.2), side: 'r', len: 24, color: COL.ink });
-    t.add({ id: 'p-s6', text: 'Test', sub: '261 BRACOL leaves no run trains on', anchor: at(...P.s6).add(at(0, 6.4, 0)), side: 'l', len: 30, color: COL.ink, big: true });
-    t.add({ id: 'p-farm', text: 'Real farm photos', sub: 'the field test', anchor: at(P.s6[0] + 1.1, 4.3, P.s6[2] + 5), side: 'r', len: 36, color: COL.real, big: true });
-    t.add({ id: 'p-chip', text: 'Android build', sub: 'size and speed not measured yet', anchor: at(P.s6[0] - 4.6, 2.4, P.s6[2] + 3.2), side: 'l', len: 40, color: COL.ink });
+    // every label sits on the thing it names: above it ('u'), beside it, or under it ('d')
+    t.add({ id: 'p-real', text: 'BRACOL', sub: 'real leaves · train 1,225 · test 261', anchor: at(P.real[0] - 0.4, 7.2, P.real[2] - 0.4), side: 'u', len: 14, color: COL.real, big: true });
+    t.add({ id: 'p-s1', text: 'Blender leaf', sub: '3D leaf, real BRACOL skin, severity 0 to 4', anchor: at(P.s1[0], 4.3, P.s1[2] + 0.6), side: 'u', len: 16, color: COL.sim, big: true });
+    t.add({ id: 'p-s2', text: 'Blender scene', sub: 'leaf, light, camera, render', anchor: at(P.s2[0], 8.25, P.s2[2] - 4.5), side: 'u', len: 16, color: COL.sim, big: true });
+    t.add({ id: 'p-s3', text: 'Render', sub: 'an image and its label, every time', anchor: at(P.s3[0] + 2.2, 7.25, P.s3[2] + 2.2), side: 'u', len: 16, color: COL.sim, big: true });
+    t.add({ id: 'p-s4', text: 'Synthetic set', sub: 'images + manifest.csv', anchor: at(P.s4[0] + 5.2, 7.0, P.s4[2] + 1.0), side: 'u', len: 16, color: COL.sim, big: true });
+    t.add({ id: 'p-blender', text: 'Blender', sub: 'leaf, scene, render', anchor: at(P.s2[0] + 5.8, 8.2, P.s2[2] - 4.5), side: 'r', len: 30, color: COL.sim, big: true });
+    t.add({ id: 'p-syn', text: 'Renders join the real photos', anchor: at(37, 3.2, -1), side: 'r', len: 26, color: COL.sim });
+    t.add({ id: 'p-s5', text: 'Gemma 4 E2B', sub: '2.3B effective parameters', anchor: at(P.s5[0], 7.8, P.s5[2]), side: 'u', len: 14, color: COL.ink, big: true });
+    t.add({ id: 'p-frozen', text: 'Frozen', sub: 'the base model', anchor: at(P.s5[0] - 4.3, 3.4, P.s5[2]), side: 'l', len: 20, color: '#9aa3c6' });
+    t.add({ id: 'p-train', text: 'LoRA', sub: 'a thin layer we train', anchor: at(P.s5[0] + 4.6, 7.2, P.s5[2]), side: 'r', len: 20, color: COL.ink });
+    t.add({ id: 'p-out', text: 'Answers', sub: 'rust · no rust · not sure', anchor: at(P.s5[0] + 6.4, 3.9, P.s5[2]), side: 'r', len: 26, color: COL.alarm });
+    // the three training mixes stand in a row at the front of the model: one label to the left, one under, one to the right
+    t.add({ id: 'p-pa', text: 'Real only', sub: 'step 1', anchor: at(P.s5[0] - 5.4 - 0.75, 2.4, P.s5[2] + 7.2), side: 'l', len: 14, color: COL.real });
+    t.add({ id: 'p-pb', text: 'Renders only', sub: 'step 3', anchor: at(P.s5[0] - 3.3, 0.95, P.s5[2] + 8.1), side: 'd', len: 12, color: COL.sim });
+    t.add({ id: 'p-pc', text: 'Renders + real', sub: 'step 4', anchor: at(P.s5[0] - 1.2 + 0.75, 2.4, P.s5[2] + 7.2), side: 'r', len: 14, color: COL.ink });
+    // the test cube shrinks to a chip in the phone step, so the dot follows its top
+    const s6top = at(P.s6[0], 4.5, P.s6[2]);
+    t.add({ id: 'p-s6', text: 'Test', sub: '261 BRACOL leaves no run trains on', anchor: () => s6top.set(P.s6[0], 1.05 + 3.4 * (this.endModel ? this.endModel.scale.x : 1), P.s6[2]), side: 'u', len: 16, color: COL.ink, big: true });
+    t.add({ id: 'p-farm', text: 'Real farm photos', sub: 'the field test', anchor: at(P.s6[0] + 3.4, 2.9, P.s6[2] + 5), side: 'r', len: 20, color: COL.real, big: true });
+    t.add({ id: 'p-chip', text: 'Android build', sub: 'size and speed not measured yet', anchor: at(P.s6[0] - 4.6, 1.5, P.s6[2] + 3.4), side: 'd', len: 12, color: COL.ink });
     [['10%', '128 leaves'], ['25%', '312 leaves'], ['50%', '614 leaves'], ['100%', '1,225 leaves']].forEach(([a, b], i) => {
       const H = 0.8 + [0.1, 0.25, 0.5, 1.0][i] * 5.2;
-      t.add({ id: `p-sc${i}`, text: a, sub: b, anchor: at(P.scar[0] - 7.2 + i * 4.8, 0.9 + H + 2.0, P.scar[2] + 0.4), side: i < 2 ? 'l' : 'r', len: i % 2 ? 36 : 22, color: COL.real, big: i === 0 });
+      t.add({ id: `p-sc${i}`, text: a, sub: b, anchor: at(P.scar[0] - 7.2 + i * 4.8, 0.9 + H + 1.5, P.scar[2] + 0.4), side: 'u', len: 10, color: COL.real, big: i === 0 });
     });
     t.add({ id: 'p-scar', text: 'Brown: real photos', sub: 'Blue: renders added on top', anchor: at(P.scar[0] + 6, 1.2, P.scar[2] + 5.4), side: 'r', len: 30, color: COL.sim });
   }

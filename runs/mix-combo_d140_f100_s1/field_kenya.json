@@ -1,0 +1,43 @@
+{
+ "run": "mix-combo_d140_f100_s1",
+ "field": "kenya",
+ "all_photos": false,
+ "n": 197,
+ "auc": 0.6468605141171513,
+ "accuracy": 0.5329949238578681,
+ "sensitivity": 0.25,
+ "specificity": 0.7433628318584071,
+ "precision": 0.42,
+ "f1": 0.31343283582089554,
+ "auc_ci95": [
+  0.5668798482451249,
+  0.7217594253089058
+ ],
+ "accuracy_ci95": [
+  0.4619289340101523,
+  0.6040609137055838
+ ],
+ "threshold_from_bracol_val": -1.125,
+ "by_group": {
+  "healthy": {
+   "n": 11,
+   "correct": 0.7272727272727273
+  },
+  "other": {
+   "n": 102,
+   "correct": 0.7450980392156863
+  },
+  "rust": {
+   "n": 84,
+   "correct": 0.25
+  }
+ },
+ "if_threshold_tuned_on_field": {
+  "threshold": -4.625,
+  "accuracy": 0.6040609137055838,
+  "sensitivity": 0.9642857142857143,
+  "specificity": 0.336283185840708,
+  "precision": 0.5192307692307693,
+  "f1": 0.675
+ }
+}

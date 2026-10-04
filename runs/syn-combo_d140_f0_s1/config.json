@@ -1,0 +1,17 @@
+{
+ "name": "syn-combo_d140_f0_s1",
+ "detail": 140,
+ "epochs": 3,
+ "lr": 0.0001,
+ "rank": 16,
+ "batch_size": 4,
+ "grad_accum": 4,
+ "fraction": 0,
+ "seed": 1,
+ "train_photos": 1900,
+ "synthetic_manifest": "data/synthetic/combo_v1_v3rim/manifest.csv",
+ "synthetic_photos": 0,
+ "device": "cuda",
+ "torch": "2.14.1+cu126",
+ "train_seconds": 708.4086279571056
+}

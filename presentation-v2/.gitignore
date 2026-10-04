@@ -1,0 +1,5 @@
+node_modules/
+# Rebuilt by build.mjs from img/ and tools/build_data.py
+src/data/inline.js
+.DS_Store
+/artifact-test.html

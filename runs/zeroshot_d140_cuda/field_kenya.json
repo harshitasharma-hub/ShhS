@@ -1,0 +1,43 @@
+{
+ "run": "zeroshot_d140_cuda",
+ "field": "kenya",
+ "all_photos": false,
+ "n": 197,
+ "auc": 0.42035398230088494,
+ "accuracy": 0.5634517766497462,
+ "sensitivity": 0.011904761904761904,
+ "specificity": 0.9734513274336283,
+ "precision": 0.25,
+ "f1": 0.022727272727272728,
+ "auc_ci95": [
+  0.34113243208897037,
+  0.4990189655781419
+ ],
+ "accuracy_ci95": [
+  0.49746192893401014,
+  0.6345177664974619
+ ],
+ "threshold_from_bracol_val": -9.5625,
+ "by_group": {
+  "healthy": {
+   "n": 11,
+   "correct": 1.0
+  },
+  "other": {
+   "n": 102,
+   "correct": 0.9705882352941176
+  },
+  "rust": {
+   "n": 84,
+   "correct": 0.011904761904761904
+  }
+ },
+ "if_threshold_tuned_on_field": {
+  "threshold": -16.515625,
+  "accuracy": 0.467005076142132,
+  "sensitivity": 1.0,
+  "specificity": 0.07079646017699115,
+  "precision": 0.4444444444444444,
+  "f1": 0.6153846153846154
+ }
+}

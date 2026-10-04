@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BaseScene } from './baseScene.js';
 import { COL } from './diagram.js';
 import { mulberry32, range, damp, clamp } from '../core/math.js';
+import { fitFrame, boxPts as cornersOf } from '../core/frame.js';
 
 // A cloud of points that is a street, then becomes Noor's slope.
 // Same trick, new domain: whoever makes the scene knows where everything is, so labels are free.
@@ -189,17 +190,22 @@ export class IdeaScene extends BaseScene {
     this.sick.forEach((s) => mkBox(s.x, s.y - 1.2, s.z, 5.6, 3.4, 5.0, COL.alarm, this.boxesB));
     this.group.add(this.boxesA, this.boxesB);
 
-    this._poses();
+    this._frames();
     this._tags();
     this.built = true;
   }
 
-  _poses() {
-    this.poses = {
-      'idea-1': { pos: [-6, 64, 100], target: [0, 1, -6], fov: 38, parallax: 0.7 },
-      'idea-2': { pos: [-6, 68, 98], target: [0, 3, -6], fov: 38, parallax: 0.7 },
+  // What must be in the picture for each step. The camera is worked out from the stage (see core/frame.js).
+  // The street and the field are bigger than the picture, so each shot closes in on the part that carries the labels.
+  _frames() {
+    const car = this.cars[2], ped = this.peds[1], sick = this.sick[2], ok = this.shrubsB[7];
+    this.frames = {
+      'idea-1': { pts: [...cornersOf((car.x + ped.x) / 2, 2.2, 0, Math.abs(ped.x - car.x) + 30, 5, 17), [car.x, 9, car.z], [ped.x, 9, ped.z]], az: -10, el: 30, fov: 32, pad: [0.04, 0.08], parallax: 0.4 },
+      'idea-2': { pts: [...cornersOf((sick.x + ok.x) / 2, sick.y + 1, (sick.z + ok.z) / 2, Math.abs(sick.x - ok.x) + 34, 5, 26), [sick.x, sick.y + 9, sick.z], [ok.x, ok.y + 9, ok.z]], az: -10, el: 36, fov: 32, pad: [0.04, 0.08], parallax: 0.4 },
     };
   }
+
+  pose(id) { return fitFrame(this.frames[id], this.app.layout.aspect); }
 
   _tags() {
     const t = this.app.tags;

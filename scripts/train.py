@@ -19,8 +19,8 @@ from peft import LoraConfig, get_peft_model
 from torch.utils.data import DataLoader, Dataset
 from transformers import get_cosine_schedule_with_warmup
 
-from rust_common import (LORA_TARGETS, RUNS, balanced, collate, empty_cache, encode, evaluate_run, load_model, pick_device,
-                         read_manifest, to_device, train_rows)
+from rust_common import (LORA_TARGETS, RUNS, balanced, collate, empty_cache, encode, evaluate_field, evaluate_run, load_model,
+                         pick_device, read_manifest, to_device, train_rows)
 
 
 class Photos(Dataset):
@@ -37,7 +37,10 @@ class Photos(Dataset):
 def training_rows(manifest, args, fraction, seed):
     rows = train_rows(manifest, fraction, seed) if fraction else []
     if args.synthetic_manifest:
-        synthetic = [r for r in read_manifest(args.synthetic_manifest) if r.get("split", "train") == "train"]
+        synthetic = [r for path in args.synthetic_manifest.split(",") for r in read_manifest(path) if r.get("split", "train") == "train"]
+        if 0 < fraction < 100:  # with scarce real photos, a render may only come from a leaf in the real subset
+            leaves = {int(r["id"]) for r in rows}
+            synthetic = [r for r in synthetic if int(r["source_id"]) in leaves]
         random.Random(seed).shuffle(synthetic)
         rows = rows + synthetic[: args.synthetic_photos or len(synthetic)]
     return balanced(rows, args.limit_train, seed) if args.limit_train else rows
@@ -99,8 +102,10 @@ def main():
     ap.add_argument("--grid", action="store_true", help="run every fraction and seed below, reusing the loaded model")
     ap.add_argument("--fractions", default="10,25,50,100")
     ap.add_argument("--seeds", default="0,1,2")
-    ap.add_argument("--synthetic-manifest", help="CSV with image, rust and split columns, for the synthetic runs")
+    ap.add_argument("--synthetic-manifest", help="CSV with image, rust and split columns, for the synthetic runs. Several, comma separated.")
+    ap.add_argument("--tag", default="", help="names the synthetic recipe in the run name, for example v3 gives mix-v3_d140_f100_s0")
     ap.add_argument("--synthetic-photos", type=int, default=0, help="use this many synthetic photos. 0 means all.")
+    ap.add_argument("--field", default="", help="folders in data/field/ to score after each run, for example uganda,kenya")
     ap.add_argument("--no-checkpointing", action="store_true", help="keep activations instead of recomputing them")
     ap.add_argument("--workers", type=int)
     ap.add_argument("--limit-train", type=int, default=0, help="train on only this many photos, for a quick test")
@@ -121,6 +126,7 @@ def main():
         for seed in seeds:
             rows = training_rows(manifest, args, fraction, seed)
             kind = ("mix" if fraction else "syn") if args.synthetic_manifest else "real"
+            kind = f"{kind}-{args.tag}" if args.tag else kind
             name = args.name if args.name and not args.grid else f"{kind}_d{args.detail}_f{fraction}_s{seed}"
             run_dir = RUNS / name
             if (run_dir / "metrics.json").exists() and not args.force:
@@ -140,9 +146,15 @@ def main():
                     "train_photos": len(rows), "synthetic_manifest": args.synthetic_manifest,
                     "synthetic_photos": args.synthetic_photos, "device": device, "torch": torch.__version__,
                     "train_seconds": train_seconds}
-            evaluate_run(peft_model, processor, run_dir, info, device, dtype, manifest, args.limit_eval,
-                         8 if device == "cuda" else 1)
+            result = evaluate_run(peft_model, processor, run_dir, info, device, dtype, manifest, args.limit_eval,
+                                  8 if device == "cuda" else 1)
             (run_dir / "config.json").write_text(json.dumps(info, indent=1) + "\n")
+            if args.field:
+                try:
+                    evaluate_field(peft_model, processor, run_dir, result["threshold_from_val"], device, dtype,
+                                   args.field.split(","), 8 if device == "cuda" else 1, run_name=name)
+                except Exception as err:  # the run is saved already. Score it later with scripts/score_field.py
+                    print(f"field scoring failed for {name}: {err!r}", flush=True)
             model = peft_model.unload()
             del peft_model
             empty_cache(device)

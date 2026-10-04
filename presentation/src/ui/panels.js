@@ -17,12 +17,27 @@ export class Panels {
       const el = document.createElement('section');
       el.className = 'panel';
       el.dataset.side = b.side;
+      el.dataset.layout = b.layout || 'overlay';
       if (b.wide) el.dataset.wide = '1';
+      if (b.cols) el.dataset.cols = b.cols;     // steps of one scene that share a card shape, such as the leaf lab
       el.id = `beat-${b.id}`;
       el.innerHTML = `<div class="panel__card">${brand(b.html)}</div>`;
       el.setAttribute('inert', '');
       el.setAttribute('aria-hidden', 'true');
-      el.querySelectorAll('.panel__card > *').forEach((c, i) => c.style.setProperty('--i', i));
+      const card = el.querySelector('.panel__card');
+      if (el.dataset.layout !== 'overlay') {
+        // a dock or a side column has two parts: the heading (what step this is) and the rest (what to know)
+        const head = document.createElement('header');
+        head.className = 'panel__head';
+        const rest = document.createElement('div');
+        rest.className = 'panel__rest';
+        [...card.children].forEach((c) => (c.matches('.eyebrow, .panel__title') ? head : rest).appendChild(c));
+        card.append(head);
+        if (rest.children.length) card.append(rest);
+        card.querySelectorAll('.panel__head > *, .panel__rest > *').forEach((c, i) => c.style.setProperty('--i', i));
+      } else {
+        card.querySelectorAll(':scope > *').forEach((c, i) => c.style.setProperty('--i', i));
+      }
       this.root.appendChild(el);
       this.els.push(el);
       // A beat can also ask for a dock (a strip of controls at the bottom of the screen) or a float
@@ -81,11 +96,14 @@ export class Panels {
     const root = this.root;
     root.addEventListener('click', (e) => {
       const go = e.target.closest('[data-go]');
-      if (go) { this.app.action(go.dataset.go); return; }
+      // after a mouse click the button must not keep the focus, or the presenter's Space key would press it again
+      const letGo = (b) => { if (e.detail > 0) b.blur(); };
+      if (go) { this.app.action(go.dataset.go); letGo(go); return; }
       const ctl = e.target.closest('button[data-ctl]');
       if (ctl) {
-        if (ctl.dataset.ctl === 'mode') { this.app.control('mode', ctl, { mode: ctl.dataset.mode }); return; }
-        this.app.control(ctl.dataset.ctl, ctl);
+        if (ctl.dataset.ctl === 'mode') this.app.control('mode', ctl, { mode: ctl.dataset.mode });
+        else this.app.control(ctl.dataset.ctl, ctl);
+        letGo(ctl);
       }
     });
     root.addEventListener('input', (e) => {

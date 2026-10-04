@@ -1,0 +1,43 @@
+{
+ "run": "real_d280_f100_s0",
+ "field": "uganda",
+ "all_photos": false,
+ "n": 300,
+ "auc": 0.9612888888888889,
+ "accuracy": 0.8666666666666667,
+ "sensitivity": 0.7933333333333333,
+ "specificity": 0.94,
+ "precision": 0.9296875,
+ "f1": 0.8561151079136691,
+ "auc_ci95": [
+  0.9373074555403773,
+  0.9794917499585304
+ ],
+ "accuracy_ci95": [
+  0.8233333333333334,
+  0.9033333333333333
+ ],
+ "threshold_from_bracol_val": 1.875,
+ "by_group": {
+  "healthy": {
+   "n": 93,
+   "correct": 0.967741935483871
+  },
+  "other": {
+   "n": 57,
+   "correct": 0.8947368421052632
+  },
+  "rust": {
+   "n": 150,
+   "correct": 0.7933333333333333
+  }
+ },
+ "if_threshold_tuned_on_field": {
+  "threshold": -2.75,
+  "accuracy": 0.8966666666666666,
+  "sensitivity": 0.96,
+  "specificity": 0.8333333333333334,
+  "precision": 0.8520710059171598,
+  "f1": 0.9028213166144201
+ }
+}

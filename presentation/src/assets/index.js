@@ -37,7 +37,30 @@ import lab_365 from './lab_365.jpg';
 import lab_891 from './lab_891.jpg';
 import lab_895 from './lab_895.jpg';
 import lab_960 from './lab_960.jpg';
+import leaf_backlit_phone from './leaf_backlit_phone.webp';
+import leaf_backlit_raw from './leaf_backlit_raw.webp';
+import leaf_cutout from './leaf_cutout.webp';
+import leaf_golden_phone from './leaf_golden_phone.webp';
+import leaf_golden_raw from './leaf_golden_raw.webp';
+import leaf_overcast_phone from './leaf_overcast_phone.webp';
+import leaf_overcast_raw from './leaf_overcast_raw.webp';
+import leaf_photo from './leaf_photo.webp';
+import leaf_rain_phone from './leaf_rain_phone.webp';
+import leaf_rain_raw from './leaf_rain_raw.webp';
+import leaf_shade_phone from './leaf_shade_phone.webp';
+import leaf_shade_raw from './leaf_shade_raw.webp';
+import leaf_studio_phone from './leaf_studio_phone.webp';
+import leaf_studio_raw from './leaf_studio_raw.webp';
+import leaf_sun_phone from './leaf_sun_phone.webp';
+import leaf_sun_raw from './leaf_sun_raw.webp';
+import leaf_sun_wet_phone from './leaf_sun_wet_phone.webp';
+import leaf_sun_wet_raw from './leaf_sun_wet_raw.webp';
+import leaf_train_0 from './leaf_train_0.webp';
+import leaf_train_1 from './leaf_train_1.webp';
+import leaf_train_2 from './leaf_train_2.webp';
+import mosaic_farm from './mosaic_farm.jpg';
 import mosaic_kenya from './mosaic_kenya.jpg';
+import mosaic_lab from './mosaic_lab.jpg';
 import mosaic_plain from './mosaic_plain.jpg';
 import real_897 from './real_897.jpg';
 import render_afterrain from './render_afterrain.jpg';
@@ -99,7 +122,30 @@ export const IMG = {
   lab_891,
   lab_895,
   lab_960,
+  leaf_backlit_phone,
+  leaf_backlit_raw,
+  leaf_cutout,
+  leaf_golden_phone,
+  leaf_golden_raw,
+  leaf_overcast_phone,
+  leaf_overcast_raw,
+  leaf_photo,
+  leaf_rain_phone,
+  leaf_rain_raw,
+  leaf_shade_phone,
+  leaf_shade_raw,
+  leaf_studio_phone,
+  leaf_studio_raw,
+  leaf_sun_phone,
+  leaf_sun_raw,
+  leaf_sun_wet_phone,
+  leaf_sun_wet_raw,
+  leaf_train_0,
+  leaf_train_1,
+  leaf_train_2,
+  mosaic_farm,
   mosaic_kenya,
+  mosaic_lab,
   mosaic_plain,
   real_897,
   render_afterrain,

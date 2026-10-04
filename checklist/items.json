@@ -76,14 +76,22 @@
     "doneAt": "2026-10-04"
   },
   {
+    "id": "synth-v3-rims",
+    "text": "Step 2e: render synthetic set v3, other-disease hard negatives with orange or yellow rims",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
     "id": "step-3",
-    "text": "Step 3: fine-tune on synthetic only, test on BRACOL",
-    "done": false
+    "text": "Step 3: fine-tune on synthetic only, test on BRACOL. First round done: matches real on clean BRACOL, does not help on Uganda. See results/summary.md",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "step-4",
-    "text": "Step 4: fine-tune on synthetic plus BRACOL",
-    "done": false
+    "text": "Step 4: fine-tune on synthetic plus BRACOL. First round done: matches real on clean BRACOL, does not help on Uganda. See results/summary.md",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "scarcity-curve",
@@ -148,7 +156,7 @@
   },
   {
     "id": "08c1163e",
-    "text": "RunPod: stop the pod when the runs finish. It bills $1.10 per hour until you do",
+    "text": "RunPod: stop the pod now. It bills $1.10 per hour. Results, logs and 4 adapters are already on this Mac",
     "done": false
   },
   {
@@ -182,8 +190,9 @@
   },
   {
     "id": "field-scoring-steps-3-4",
-    "text": "Step 3 and 4 runs score the field photos by themselves (train.py --field). Score the real-only runs too, with scripts/batch_field.sh",
-    "done": false
+    "text": "Steps 3 and 4 runs scored on the field photos, including all 1,792 Uganda photos. Result: synthetic did not help on Uganda",
+    "done": true,
+    "doneAt": "2026-10-04"
   },
   {
     "id": "field-is-main-test",
@@ -194,6 +203,41 @@
   {
     "id": "launch-step-3-4",
     "text": "Steps 3 and 4 launched on the pod: stream a started at 06:34, stream b starts by itself when Step 1 ends. About 2 hours",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "round2-v3-render",
+    "text": "Round 2: the other session renders the v3 synthetic set with other-disease close-ups with orange rims (target 09:15)",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "round2-v3-train",
+    "text": "Round 2 trained and scored: v3 did not help on Uganda (AUC 0.908 at 100% real vs 0.946 real only). Last try, v1 plus the rimmed photos, nearly ties real only (87.5% vs 88.2%)",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "not-sure-field",
+    "text": "Set the cut-off and the not-sure margin on field photos (scripts/calibrate_field.py). About 100 local photos are enough",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "brief-video-check",
+    "text": "Check if the World Bank brief needs its own 2 to 5 minute video, besides the three 60 second videos",
+    "done": false
+  },
+  {
+    "id": "adapters-pulled",
+    "text": "Four key adapters saved to this Mac, hashes checked: real 10%, real 100%, real detail 70, and the best synthetic recipe (mix-combo)",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "study-complete",
+    "text": "The study is complete: zero-shot, real-only, synthetic only, synthetic plus real, v3 and combo, all scored on BRACOL, Uganda and Kenya",
     "done": true,
     "doneAt": "2026-10-04"
   }

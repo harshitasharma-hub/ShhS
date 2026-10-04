@@ -170,6 +170,8 @@ def finish(job, root, brow, variant=0):
     meta = json.loads((root / "raw" / f"{job['jid']}.json").read_text())
     meta["phone"] = log
     meta["variant"] = variant
+    if job.get("rim"):
+        meta["rim"] = job["rim"]
     (root / "meta").mkdir(exist_ok=True)
     (root / "meta" / f"{stem}.json").write_text(json.dumps(meta))
     draft = root / "raw" / f"{job['jid']}.png.draft.png"

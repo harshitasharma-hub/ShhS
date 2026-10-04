@@ -23,6 +23,19 @@ LORA_TARGETS = r".*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_p
 ABSTAIN_TARGET = 0.95  # accuracy we want on the photos the tool answers
 
 
+def limit_threads():
+    """A rented container shows every host CPU but gets a small CPU quota. Torch then starts one thread per host CPU,
+    they burn the quota in bursts, and the whole container stalls until the next 100 ms slot."""
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        torch.set_num_threads(max(1, int(int(quota) / int(period) // 4)))
+    except (OSError, ValueError):
+        pass  # no quota here: a laptop, or the file says "max"
+
+
+limit_threads()
+
+
 def pick_device():
     if torch.cuda.is_available():
         return "cuda"
@@ -235,6 +248,20 @@ def summarize(val_rows, val_scores, test_rows, test_scores):
     }
 
 
+def summarize_field(rows, scores, threshold):
+    """Metrics on a field set at the threshold the run picked on BRACOL val. Nothing is tuned on the field photos,
+    except the last block, which shows what a threshold tuned on them would give."""
+    y = [int(r["rust"]) for r in rows]
+    by_group = {}
+    for g in sorted({r["group"] for r in rows}):
+        idx = [i for i, r in enumerate(rows) if r["group"] == g]
+        by_group[g] = {"n": len(idx), "correct": float(np.mean([(scores[i] >= threshold) == (y[i] == 1) for i in idx]))}
+    own = best_threshold(y, scores)
+    return {"n": len(y), "auc": auc(y, scores), **at_threshold(y, scores, threshold), **bootstrap(y, scores, threshold),
+            "threshold_from_bracol_val": threshold, "by_group": by_group,
+            "if_threshold_tuned_on_field": {"threshold": own, **at_threshold(y, scores, own)}}
+
+
 def evaluate_run(model, processor, run_dir, args_info, device, dtype, manifest, limit=0, batch_size=1):
     """Score BRACOL val and test, then write scores_*.csv and metrics.json into run_dir."""
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -257,3 +284,26 @@ def evaluate_run(model, processor, run_dir, args_info, device, dtype, manifest, 
     print(f"test AUC {t['auc']:.3f} {t['auc_ci95']} | accuracy {t['accuracy']:.3f} | sensitivity {t['sensitivity']:.3f} | "
           f"specificity {t['specificity']:.3f} | not-sure coverage {result['not_sure']['test']['coverage']:.2f}", flush=True)
     return result
+
+
+def evaluate_field(model, processor, run_dir, threshold, device, dtype, sets, batch_size=1, all_photos=False, run_name=""):
+    """Score real field photos (folders in data/field/) with the model as it is. Writes scores_field_<set>.csv and
+    field_<set>.json into run_dir. The threshold comes from BRACOL val, so nothing is tuned on the field photos."""
+    results = {}
+    for name in sets:
+        rows = read_manifest(ROOT / "data" / "field" / name / "manifest.csv")
+        if not all_photos:
+            rows = [r for r in rows if r["in_eval"] == "1"]
+        tag = f"{name}_all" if all_photos else name  # the full set gets its own files, so the sample results stay
+        print(f"scoring {name}: {len(rows)} photos", flush=True)
+        scores = score_rows(model, processor, rows, device, dtype, batch_size)
+        with open(run_dir / f"scores_field_{tag}.csv", "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["id", "rust", "group", "score"])
+            w.writerows([r["id"], r["rust"], r["group"], f"{s:.4f}"] for r, s in zip(rows, scores))
+        results[tag] = {"run": run_name, "field": name, "all_photos": all_photos, **summarize_field(rows, scores, threshold)}
+        (run_dir / f"field_{tag}.json").write_text(json.dumps(results[tag], indent=1) + "\n")
+        r = results[tag]
+        print(f"{tag}: AUC {r['auc']:.3f} {[round(x, 3) for x in r['auc_ci95']]} | accuracy {r['accuracy']:.3f} | "
+              f"sensitivity {r['sensitivity']:.3f} | specificity {r['specificity']:.3f}", flush=True)
+    return results
