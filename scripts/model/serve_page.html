@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Leaf check">
+<meta name="theme-color" content="#EAF0EC">
+<title>Leaf check</title>
+<style>
+  :root {
+    --mist: #EAF0EC;
+    --paper: #FFFFFF;
+    --ink: #12201A;
+    --ink-soft: #46574E;
+    --line: #C9D5CD;
+    --leaf: #1F6B45;
+    --leaf-tint: #D5E8DC;
+    --rust: #BF4A12;
+    --rust-tint: #F6DDCF;
+    --dusk: #34508C;
+    --dusk-tint: #DAE2F2;
+    --radius: 18px;
+    --gutter: 16px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--mist);
+    color: var(--ink);
+    font: 400 17px/1.45 ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: max(var(--gutter), env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right))
+             max(var(--gutter), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+  }
+  main { max-width: 30rem; margin: 0 auto; display: grid; gap: 14px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .mark { font-weight: 800; letter-spacing: -0.01em; font-size: 20px; }
+  .mark small { display: block; font-weight: 500; font-size: 14px; letter-spacing: 0; color: var(--ink-soft); }
+  .langs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  .langs button {
+    border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-weight: 700; font-size: 14px;
+    min-width: 44px; min-height: 44px; border-radius: 999px; cursor: pointer;
+  }
+  .langs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  .frame {
+    position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); overflow: hidden;
+    background: var(--paper); border: 2px dashed var(--line);
+    display: grid; place-items: center; text-align: center; padding: 20px;
+  }
+  .frame.has-photo { border-style: solid; border-color: var(--paper); padding: 0; background: #0b130f; max-height: 34vh; max-height: 34dvh; }
+  .frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .frame p { margin: 0; color: var(--ink-soft); max-width: 18em; }
+  .scan {
+    position: absolute; inset: 0; display: none; place-items: center; background: rgba(18, 32, 26, .55);
+    color: #fff; font-weight: 700;
+  }
+  .busy .scan { display: grid; }
+
+  .actions { display: grid; gap: 10px; }
+  .btn {
+    appearance: none; border: 0; border-radius: var(--radius); font: inherit; font-weight: 800; font-size: 19px;
+    min-height: 60px; padding: 0 20px; cursor: pointer; width: 100%;
+  }
+  .btn.primary { background: var(--leaf); color: #fff; }
+  .btn.quiet { background: transparent; color: var(--ink); border: 2px solid var(--ink); min-height: 52px; font-size: 17px; }
+  .btn:focus-visible, .langs button:focus-visible { outline: 3px solid var(--dusk); outline-offset: 2px; }
+  .btn[disabled] { opacity: .5; }
+
+  .result { background: var(--paper); border-radius: var(--radius); padding: 18px; display: none; gap: 14px; }
+  .result.show { display: grid; }
+  .verdict { margin: 0; font-size: clamp(34px, 11vw, 46px); line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; }
+  .result[data-verdict="rust"] .verdict { color: var(--rust); }
+  .result[data-verdict="no_rust"] .verdict { color: var(--leaf); }
+  .result[data-verdict="not_sure"] .verdict { color: var(--dusk); }
+  .next { margin: 0; }
+
+  .gauge { display: grid; gap: 6px; }
+  .track { position: relative; height: 26px; border-radius: 8px; overflow: hidden; display: flex; border: 1px solid var(--line); }
+  .zone { height: 100%; }
+  .zone.no { background: var(--leaf-tint); }
+  .zone.ask { background: repeating-linear-gradient(135deg, var(--dusk-tint) 0 7px, #fff 7px 12px); }
+  .zone.yes { background: var(--rust-tint); }
+  .pin { position: absolute; top: -1px; bottom: -1px; width: 4px; margin-left: -2px; background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px #fff; }
+  .labels { position: relative; height: 20px; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+  .labels span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+  .reading { font: 500 13px/1.3 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-soft); }
+
+  .note { color: var(--ink-soft); font-size: 14px; margin: 2px 2px 0; }
+  .error { background: var(--rust-tint); color: #5c1f04; border-radius: var(--radius); padding: 14px 16px; font-weight: 600; display: none; }
+  .error.show { display: block; }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn { transition: transform .08s ease; }
+    .btn:active { transform: scale(.985); }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="mark"><span id="t-name">Leaf check</span><small id="t-sub"></small></div>
+    <div class="langs" role="group" aria-label="Language">
+      <button type="button" data-lang="es" aria-pressed="true">ES</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <div class="frame" id="frame">
+    <p id="t-hint"></p>
+    <div class="scan" id="scan" aria-live="polite"><span id="t-reading"></span></div>
+  </div>
+
+  <section class="result" id="result" aria-live="polite">
+    <h1 class="verdict" id="verdict"></h1>
+    <p class="next" id="next"></p>
+    <div class="gauge">
+      <div class="track" id="track" aria-hidden="true">
+        <div class="zone no" id="z-no"></div>
+        <div class="zone ask" id="z-ask"></div>
+        <div class="zone yes" id="z-yes"></div>
+        <div class="pin" id="pin"></div>
+      </div>
+      <div class="labels" id="labels" aria-hidden="true"></div>
+      <div class="reading" id="reading"></div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn primary" id="take" type="button"></button>
+    <button class="btn quiet" id="pick" type="button"></button>
+  </div>
+  <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+  <input id="lib" type="file" accept="image/*" hidden>
+
+  <div class="error" id="error" role="alert"></div>
+
+  <p class="note" id="t-note"></p>
+</main>
+
+<script>
+const T = {
+  es: {
+    name: "Leaf check", sub: "¿Tiene roya esta hoja de café?",
+    hint: "Sostenga una hoja extendida, con luz de día. Llene el cuadro.",
+    take: "Fotografiar una hoja", pick: "Elegir de las fotos", again: "Revisar otra hoja",
+    reading: "Leyendo la hoja...",
+    rust: "Roya: sí", no_rust: "Roya: no", not_sure: "No estoy seguro",
+    next: {
+      rust: "Se ven manchas naranjas o amarillas. Pida a una persona que lo confirme antes de actuar.",
+      no_rust: "No se ve roya en esta hoja. Una hoja no es toda la planta: revise algunas más.",
+      not_sure: "Pida a una persona que mire esta hoja."
+    },
+    zones: ["No", "Preguntar a alguien", "Sí"],
+    score: "Puntaje", cutoff: "corte", band: "zona de duda",
+    note: "Es una guía, no un diagnóstico. La respuesta sale solo de esta foto. Sin internet: el modelo corre en la computadora de esta red Wi-Fi.",
+    fail: "No se pudo conectar con la computadora. Revise que ambos estén en la misma red Wi-Fi.",
+    bad: "No se pudo leer esta foto. Pruebe con otra."
+  },
+  pt: {
+    name: "Leaf check", sub: "Esta folha de café tem ferrugem?",
+    hint: "Segure uma folha aberta, com luz do dia. Encha o quadro.",
+    take: "Fotografar uma folha", pick: "Escolher das fotos", again: "Verificar outra folha",
+    reading: "Lendo a folha...",
+    rust: "Ferrugem: sim", no_rust: "Ferrugem: não", not_sure: "Não tenho certeza",
+    next: {
+      rust: "Há manchas laranja ou amarelas. Peça a uma pessoa para confirmar antes de agir.",
+      no_rust: "Não há ferrugem nesta folha. Uma folha não é a planta toda: veja mais algumas.",
+      not_sure: "Peça a uma pessoa para olhar esta folha."
+    },
+    zones: ["Não", "Perguntar a alguém", "Sim"],
+    score: "Pontuação", cutoff: "corte", band: "zona de dúvida",
+    note: "É um guia, não um diagnóstico. A resposta vem só desta foto. Sem internet: o modelo roda no computador desta rede Wi-Fi.",
+    fail: "Não foi possível falar com o computador. Veja se os dois estão na mesma rede Wi-Fi.",
+    bad: "Não foi possível ler esta foto. Tente outra."
+  },
+  en: {
+    name: "Leaf check", sub: "Does this coffee leaf have rust?",
+    hint: "Hold one leaf flat in daylight. Fill the frame.",
+    take: "Photograph a leaf", pick: "Choose from photos", again: "Check another leaf",
+    reading: "Reading the leaf...",
+    rust: "Rust: yes", no_rust: "Rust: no", not_sure: "Not sure",
+    next: {
+      rust: "Orange or yellow spots found. Ask a person to confirm before you act.",
+      no_rust: "No rust seen on this leaf. One leaf is not the whole plant, so check a few more.",
+      not_sure: "Ask a person to look at this leaf."
+    },
+    zones: ["No", "Ask a person", "Yes"],
+    score: "Score", cutoff: "cut-off", band: "doubt band",
+    note: "A guide, not a diagnosis. The answer comes from this photo only. No internet needed: the model runs on the laptop on this Wi-Fi.",
+    fail: "Could not reach the laptop. Check that both are on the same Wi-Fi.",
+    bad: "Could not read this photo. Try another one."
+  }
+};
+
+const $ = (id) => document.getElementById(id);
+let lang = "es", last = null, hasPhoto = false;
+try { lang = localStorage.getItem("lang") || "es"; } catch (e) {}
+
+function paint() {
+  const t = T[lang];
+  document.documentElement.lang = lang;
+  $("t-name").textContent = t.name; $("t-sub").textContent = t.sub; $("t-hint").textContent = t.hint;
+  $("t-reading").textContent = t.reading; $("t-note").textContent = t.note;
+  $("take").textContent = last ? t.again : t.take; $("pick").textContent = t.pick;
+  document.querySelectorAll(".langs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  $("t-hint").style.display = hasPhoto ? "none" : "";
+  if (last) showResult(last);
+}
+
+function showResult(r) {
+  const t = T[lang], lo = r.cutoff - r.margin, hi = r.cutoff + r.margin, MIN = -9, MAX = 9;
+  const pct = (v) => Math.max(0, Math.min(100, ((v - MIN) / (MAX - MIN)) * 100));
+  $("result").dataset.verdict = r.verdict;
+  $("verdict").textContent = t[r.verdict];
+  $("next").textContent = t.next[r.verdict];
+  $("z-no").style.width = pct(lo) + "%";
+  $("z-ask").style.width = (pct(hi) - pct(lo)) + "%";
+  $("z-yes").style.width = (100 - pct(hi)) + "%";
+  $("pin").style.left = pct(r.score) + "%";
+  const labels = $("labels"); labels.textContent = "";
+  [pct(lo) / 2, (pct(lo) + pct(hi)) / 2, (pct(hi) + 100) / 2].forEach((center, i) => {
+    const s = document.createElement("span"); s.style.left = center + "%"; s.textContent = t.zones[i]; labels.appendChild(s);
+  });
+  const f = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+  $("reading").textContent = `${t.score} ${f(r.score)} · ${t.cutoff} ${f(r.cutoff)} · ${t.band} ${f(lo)} / ${f(hi)}`;
+  $("result").classList.add("show");
+}
+
+function fail(msg) { const e = $("error"); e.textContent = msg; e.classList.add("show"); }
+
+async function toJpeg(file) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 720 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.92));
+  return { blob, url: URL.createObjectURL(blob) };
+}
+
+async function handle(file) {
+  if (!file) return;
+  $("error").classList.remove("show");
+  let jpeg;
+  try { jpeg = await toJpeg(file); } catch (e) { return fail(T[lang].bad); }
+  const frame = $("frame");
+  frame.querySelectorAll("img").forEach((n) => n.remove());
+  const img = new Image(); img.alt = ""; img.src = jpeg.url; frame.prepend(img);
+  frame.classList.add("has-photo", "busy"); hasPhoto = true; paint();
+  $("result").classList.remove("show");
+  try {
+    const res = await fetch("/score", { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: jpeg.blob });
+    if (res.status === 400) throw new Error("bad");
+    if (!res.ok) throw new Error("net");
+    last = await res.json();
+  } catch (e) {
+    frame.classList.remove("busy");
+    return fail(e.message === "bad" ? T[lang].bad : T[lang].fail);
+  }
+  frame.classList.remove("busy"); paint();
+  $("result").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+}
+
+$("take").addEventListener("click", () => $("cam").click());
+$("pick").addEventListener("click", () => $("lib").click());
+["cam", "lib"].forEach((id) => $(id).addEventListener("change", (e) => { handle(e.target.files[0]); e.target.value = ""; }));
+document.querySelectorAll(".langs button").forEach((b) => b.addEventListener("click", () => {
+  lang = b.dataset.lang; try { localStorage.setItem("lang", lang); } catch (e) {} paint();
+}));
+paint();
+</script>
+</body>
+</html>
