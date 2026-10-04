@@ -4,12 +4,13 @@
   .venv/bin/python scripts/model/serve.py --run real_d140_f10_s0
 Then open the address it prints on the phone (Safari: Share, then Add to Home Screen, for a full-screen app).
 The model stays on this computer and the page loads nothing from the internet, so it works on a Wi-Fi network
-with no internet, or on the phone's hotspot. The photo is held in memory for one request and is not saved.
+with no internet, or on the phone's hotspot. Each photo goes to a temporary file for one request, then is deleted.
 The answer rule is the one in predict.py: a score near the cut-off becomes "not sure".
 """
 import argparse
 import io
 import json
+import os
 import socket
 import subprocess
 import tempfile
@@ -17,6 +18,9 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+# Parallel weight loading can hang on this Mac (a lock inside safetensors), so load one tensor at a time.
+os.environ.setdefault("HF_DEACTIVATE_ASYNC_LOAD", "1")
 
 import torch
 from PIL import Image

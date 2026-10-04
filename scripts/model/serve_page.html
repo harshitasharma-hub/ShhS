@@ -23,6 +23,7 @@
     --dusk-tint: #DAE2F2;
     --radius: 18px;
     --gutter: 16px;
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -39,12 +40,14 @@
   main { max-width: 30rem; margin: 0 auto; display: grid; gap: 14px; }
 
   header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .mark { font-weight: 800; letter-spacing: -0.01em; font-size: 20px; }
-  .mark small { display: block; font-weight: 500; font-size: 14px; letter-spacing: 0; color: var(--ink-soft); }
+  .mark { min-width: 0; }
+  .mark h1 { margin: 0; font-weight: 800; letter-spacing: -0.01em; font-size: 20px; line-height: 1.2; text-wrap: balance; }
+  .mark p { margin: 0; font-weight: 500; font-size: 14px; color: var(--ink-soft); text-wrap: balance; }
   .langs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
   .langs button {
     border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-weight: 700; font-size: 14px;
     min-width: 44px; min-height: 44px; border-radius: 999px; cursor: pointer;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   .langs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
@@ -66,19 +69,26 @@
   .btn {
     appearance: none; border: 0; border-radius: var(--radius); font: inherit; font-weight: 800; font-size: 19px;
     min-height: 60px; padding: 0 20px; cursor: pointer; width: 100%;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   .btn.primary { background: var(--leaf); color: #fff; }
   .btn.quiet { background: transparent; color: var(--ink); border: 2px solid var(--ink); min-height: 52px; font-size: 17px; }
   .btn:focus-visible, .langs button:focus-visible { outline: 3px solid var(--dusk); outline-offset: 2px; }
-  .btn[disabled] { opacity: .5; }
+  .btn[disabled] { opacity: .5; cursor: progress; }
+  @media (hover: hover) {
+    .btn.primary:hover:not([disabled]) { background: #17573A; }
+    .btn.quiet:hover:not([disabled]) { background: var(--paper); }
+    .langs button:hover { color: var(--ink); }
+    .langs button[aria-pressed="true"]:hover { color: var(--paper); }
+  }
 
   .result { background: var(--paper); border-radius: var(--radius); padding: 18px; display: none; gap: 14px; }
   .result.show { display: grid; }
-  .verdict { margin: 0; font-size: clamp(34px, 11vw, 46px); line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; }
+  .verdict { margin: 0; font-size: clamp(34px, 11vw, 46px); line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; overflow-wrap: anywhere; }
   .result[data-verdict="rust"] .verdict { color: var(--rust); }
   .result[data-verdict="no_rust"] .verdict { color: var(--leaf); }
   .result[data-verdict="not_sure"] .verdict { color: var(--dusk); }
-  .next { margin: 0; }
+  .next { margin: 0; overflow-wrap: anywhere; }
 
   .gauge { display: grid; gap: 6px; }
   .track { position: relative; height: 26px; border-radius: 8px; overflow: hidden; display: flex; border: 1px solid var(--line); }
@@ -89,7 +99,7 @@
   .pin { position: absolute; top: -1px; bottom: -1px; width: 4px; margin-left: -2px; background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px #fff; }
   .labels { position: relative; height: 20px; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
   .labels span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
-  .reading { font: 500 13px/1.3 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-soft); }
+  .reading { font: 500 13px/1.3 ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 
   .note { color: var(--ink-soft); font-size: 14px; margin: 2px 2px 0; }
   .error { background: var(--rust-tint); color: #5c1f04; border-radius: var(--radius); padding: 14px 16px; font-weight: 600; display: none; }
@@ -103,8 +113,8 @@
 <body>
 <main>
   <header>
-    <div class="mark"><span id="t-name">Leaf check</span><small id="t-sub"></small></div>
-    <div class="langs" role="group" aria-label="Language">
+    <div class="mark"><h1 id="t-name" translate="no">Leaf check</h1><p id="t-sub"></p></div>
+    <div class="langs" id="langs" role="group">
       <button type="button" data-lang="es" aria-pressed="true">ES</button>
       <button type="button" data-lang="pt" aria-pressed="false">PT</button>
       <button type="button" data-lang="en" aria-pressed="false">EN</button>
@@ -113,11 +123,11 @@
 
   <div class="frame" id="frame">
     <p id="t-hint"></p>
-    <div class="scan" id="scan" aria-live="polite"><span id="t-reading"></span></div>
+    <div class="scan" id="scan" role="status"><span id="t-reading"></span></div>
   </div>
 
   <section class="result" id="result" aria-live="polite">
-    <h1 class="verdict" id="verdict"></h1>
+    <h2 class="verdict" id="verdict"></h2>
     <p class="next" id="next"></p>
     <div class="gauge">
       <div class="track" id="track" aria-hidden="true">
@@ -146,10 +156,10 @@
 <script>
 const T = {
   es: {
-    name: "Leaf check", sub: "¿Tiene roya esta hoja de café?",
+    name: "Leaf check", lang: "Idioma", photo: "Foto de la hoja", sub: "¿Tiene roya esta hoja de café?",
     hint: "Sostenga una hoja extendida, con luz de día. Llene el cuadro.",
     take: "Fotografiar una hoja", pick: "Elegir de las fotos", again: "Revisar otra hoja",
-    reading: "Leyendo la hoja...",
+    reading: "Leyendo la hoja…",
     rust: "Roya: sí", no_rust: "Roya: no", not_sure: "No estoy seguro",
     next: {
       rust: "Se ven manchas naranjas o amarillas. Pida a una persona que lo confirme antes de actuar.",
@@ -163,10 +173,10 @@ const T = {
     bad: "No se pudo leer esta foto. Pruebe con otra."
   },
   pt: {
-    name: "Leaf check", sub: "Esta folha de café tem ferrugem?",
+    name: "Leaf check", lang: "Idioma", photo: "Foto da folha", sub: "Esta folha de café tem ferrugem?",
     hint: "Segure uma folha aberta, com luz do dia. Encha o quadro.",
     take: "Fotografar uma folha", pick: "Escolher das fotos", again: "Verificar outra folha",
-    reading: "Lendo a folha...",
+    reading: "Lendo a folha…",
     rust: "Ferrugem: sim", no_rust: "Ferrugem: não", not_sure: "Não tenho certeza",
     next: {
       rust: "Há manchas laranja ou amarelas. Peça a uma pessoa para confirmar antes de agir.",
@@ -180,11 +190,11 @@ const T = {
     bad: "Não foi possível ler esta foto. Tente outra."
   },
   en: {
-    name: "Leaf check", sub: "Does this coffee leaf have rust?",
+    name: "Leaf check", lang: "Language", photo: "Photo of the leaf", sub: "Does this coffee leaf have rust?",
     hint: "Hold one leaf flat in daylight. Fill the frame.",
-    take: "Photograph a leaf", pick: "Choose from photos", again: "Check another leaf",
-    reading: "Reading the leaf...",
-    rust: "Rust: yes", no_rust: "Rust: no", not_sure: "Not sure",
+    take: "Photograph a Leaf", pick: "Choose from Photos", again: "Check Another Leaf",
+    reading: "Reading the leaf…",
+    rust: "Rust: Yes", no_rust: "Rust: No", not_sure: "Not Sure",
     next: {
       rust: "Orange or yellow spots found. Ask a person to confirm before you act.",
       no_rust: "No rust seen on this leaf. One leaf is not the whole plant, so check a few more.",
@@ -199,13 +209,19 @@ const T = {
 };
 
 const $ = (id) => document.getElementById(id);
-let lang = "es", last = null, hasPhoto = false;
-try { lang = localStorage.getItem("lang") || "es"; } catch (e) {}
+let lang = "es", last = null, hasPhoto = false, photoUrl = null;
+(function pickLanguage() {
+  let saved = null;
+  try { saved = localStorage.getItem("lang"); } catch (e) {}
+  const fromUrl = new URLSearchParams(location.search).get("lang");
+  const fromBrowser = (navigator.languages || []).map((l) => l.slice(0, 2)).find((l) => T[l]);
+  lang = [fromUrl, saved, fromBrowser, "es"].find((l) => l && T[l]);
+})();
 
 function paint() {
   const t = T[lang];
   document.documentElement.lang = lang;
-  $("t-name").textContent = t.name; $("t-sub").textContent = t.sub; $("t-hint").textContent = t.hint;
+  $("t-sub").textContent = t.sub; $("t-hint").textContent = t.hint; $("langs").setAttribute("aria-label", t.lang);
   $("t-reading").textContent = t.reading; $("t-note").textContent = t.note;
   $("take").textContent = last ? t.again : t.take; $("pick").textContent = t.pick;
   document.querySelectorAll(".langs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
@@ -227,12 +243,18 @@ function showResult(r) {
   [pct(lo) / 2, (pct(lo) + pct(hi)) / 2, (pct(hi) + 100) / 2].forEach((center, i) => {
     const s = document.createElement("span"); s.style.left = center + "%"; s.textContent = t.zones[i]; labels.appendChild(s);
   });
-  const f = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+  const num = new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: "exceptZero" });
+  const f = (v) => num.format(v);
   $("reading").textContent = `${t.score} ${f(r.score)} · ${t.cutoff} ${f(r.cutoff)} · ${t.band} ${f(lo)} / ${f(hi)}`;
   $("result").classList.add("show");
 }
 
 function fail(msg) { const e = $("error"); e.textContent = msg; e.classList.add("show"); }
+function setBusy(on) {
+  $("frame").classList.toggle("busy", on);
+  $("frame").setAttribute("aria-busy", String(on));
+  $("take").disabled = on; $("pick").disabled = on;
+}
 
 async function toJpeg(file) {
   const bmp = await createImageBitmap(file);
@@ -241,7 +263,7 @@ async function toJpeg(file) {
   c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
   c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
   const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.92));
-  return { blob, url: URL.createObjectURL(blob) };
+  return { blob, url: URL.createObjectURL(blob), w: c.width, h: c.height };
 }
 
 async function handle(file) {
@@ -251,8 +273,11 @@ async function handle(file) {
   try { jpeg = await toJpeg(file); } catch (e) { return fail(T[lang].bad); }
   const frame = $("frame");
   frame.querySelectorAll("img").forEach((n) => n.remove());
-  const img = new Image(); img.alt = ""; img.src = jpeg.url; frame.prepend(img);
-  frame.classList.add("has-photo", "busy"); hasPhoto = true; paint();
+  if (photoUrl) URL.revokeObjectURL(photoUrl);
+  photoUrl = jpeg.url;
+  const img = new Image(); img.alt = T[lang].photo; img.width = jpeg.w; img.height = jpeg.h; img.src = jpeg.url; frame.prepend(img);
+  last = null; hasPhoto = true;
+  frame.classList.add("has-photo"); setBusy(true); paint();
   $("result").classList.remove("show");
   try {
     const res = await fetch("/score", { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: jpeg.blob });
@@ -260,10 +285,10 @@ async function handle(file) {
     if (!res.ok) throw new Error("net");
     last = await res.json();
   } catch (e) {
-    frame.classList.remove("busy");
+    setBusy(false); paint();
     return fail(e.message === "bad" ? T[lang].bad : T[lang].fail);
   }
-  frame.classList.remove("busy"); paint();
+  setBusy(false); paint();
   $("result").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
 }
 

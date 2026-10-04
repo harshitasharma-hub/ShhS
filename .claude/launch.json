@@ -20,6 +20,18 @@
         "presentation/site"
       ],
       "port": 5280
+    },
+    {
+      "name": "leaf-check",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": [
+        "scripts/model/serve.py",
+        "--run",
+        "real_d140_f10_s0",
+        "--port",
+        "8000"
+      ],
+      "port": 8000
     }
   ]
 }

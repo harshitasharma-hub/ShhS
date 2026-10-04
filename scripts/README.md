@@ -13,6 +13,7 @@ The folders follow the order you use them.
 | `prepare/` | Turn the downloads into labelled data | `data/bracol/`, `data/field/` |
 | `synth/` | Cut leaves out of BRACOL photos and render them in Blender | `data/synthetic/` |
 | `model/` | Train Gemma 4 E2B, score it, and ask it about one photo | `runs/<name>/` |
+| `phone/` | Turn a trained adapter into one file for a phone, and test that file with the phone runtime | `models/phone/<name>/` |
 | `analyze/` | Turn runs into tables and cut-offs, and make the pictures of the main README | `results/`, `runs/<name>/field_calibration.json`, `docs/readme/` |
 | `gpu/` | Run the jobs on a rented GPU | the same files, on the other machine |
 
@@ -49,7 +50,21 @@ The Blender pipeline. `data/synthetic/README.md` explains each step. The scripts
 | `score.py` | Scores BRACOL validation and test with the model as released, or with an adapter. |
 | `score_field.py` | Scores the farm photos for runs that are finished. |
 | `predict.py` | Answers rust, no rust or not sure for photos you give it. Needs a trained adapter and its `field_calibration.json`. |
+| `serve.py` | Serves a one-page web app. A phone on the same Wi-Fi sends a leaf photo and gets rust, no rust or not sure, in Spanish, Portuguese or English. The model stays on this computer, so no internet is needed. It uses the same adapter and cut-off as `predict.py`. |
+| `serve_page.html` | The page `serve.py` sends to the phone. It is one file and loads nothing from outside. |
 | `time_training.py` | Times a short training run on this machine. |
+
+## phone/
+
+Run these with the Python of the phone environment, `models/phone/venv/bin/python`. `make_phone_model.sh` builds it.
+
+| Script | What it does |
+| --- | --- |
+| `make_phone_model.sh <run>` | Does the whole job for one run: merge the adapter, export to the LiteRT-LM phone format, fix the chat template, pack one `.litertlm` file of about 5.2 GB. It takes 21 minutes on a 24 GB Mac. |
+| `merge_adapter.py` | Adds the adapter to the base weights, one tensor at a time, in float32. |
+| `patch_metadata.py` | Replaces the chat template and sets greedy sampling inside an unpacked phone file. |
+| `gemma4_classifier.jinja` | The chat template. The phone runtime cannot read the one that ships with Gemma 4. This one writes our exact prompt whenever a message has a photo, whatever text came with it. |
+| `test_phone_model.py` | Runs a `.litertlm` file with the phone runtime and compares its answers with the saved PyTorch scores. `--gpu` runs it on the graphics chip, as a phone does. |
 
 ## analyze/
 

@@ -108,8 +108,20 @@
     "doneAt": "2026-10-04"
   },
   {
+    "id": "phone-file-built",
+    "text": "Best model for farm photos (real 10%, seed 0) exported to one 5.2 GB phone file with scripts/phone/make_phone_model.sh. Checked with the phone runtime on the Mac: the same answer as PyTorch on 295 of 300 held-out photos. The chat template needed a fix",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "laptop-phone-page",
+    "text": "A one-page web app, scripts/model/serve.py, lets a phone on the same Wi-Fi send a leaf photo to the model on the laptop and read rust, no rust or not sure. Checked on the Mac with the four demo photos",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
     "id": "android-export",
-    "text": "Convert the best model for Android and try it on a phone",
+    "text": "Import the phone file in the Google AI Edge Gallery app on the iPhone and run it with the phone in airplane mode",
     "done": false
   },
   {

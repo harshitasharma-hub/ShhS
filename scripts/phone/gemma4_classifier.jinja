@@ -1,0 +1,21 @@
+{%- for message in messages -%}
+{{- '<|turn>' + ('model' if message['role'] == 'assistant' else message['role']) + '\n' -}}
+{%- if message['content'] is string -%}
+{{- message['content'] -}}
+{%- else -%}
+{%- set ns = namespace(has_image=false) -%}
+{%- for part in message['content'] -%}{%- if part['type'] == 'image' -%}{%- set ns.has_image = true -%}{%- endif -%}{%- endfor -%}
+{%- if ns.has_image and message['role'] == 'user' -%}
+{%- for part in message['content'] -%}{%- if part['type'] == 'image' -%}{{- '<|image|>' -}}{%- endif -%}{%- endfor -%}
+{{- 'Look at this coffee leaf. Does it show coffee leaf rust, which looks like yellow or orange spots? Answer with one word: Yes or No.' -}}
+{%- else -%}
+{%- for part in message['content'] -%}
+{%- if part['type'] == 'image' -%}{{- '<|image|>' -}}
+{%- elif part['type'] == 'text' -%}{{- part['text'] -}}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- endif -%}
+{{- '<turn|>\n' -}}
+{%- endfor -%}
+{%- if add_generation_prompt -%}{{- '<|turn>model\n' -}}{%- endif -%}
