@@ -2,7 +2,7 @@
 // so index.html also works when opened straight from disk (file://).
 //   node build.mjs            one-off dev build
 //   node build.mjs --watch    rebuild on change
-//   node build.mjs --prod     minified build, plus shhs-talk.html (one file) and dist/artifact.html (page fragment)
+//   node build.mjs --prod     minified build, plus shhs-talk.html (one file)
 import * as esbuild from 'esbuild';
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -63,27 +63,11 @@ function singleFile() {
   console.log(`shhs-talk.html  ${(html.length / 1024 / 1024).toFixed(2)} MB`);
 }
 
-// The same talk as a page fragment for claude.ai Artifacts: no doctype, html, head or body,
-// because the host wraps the file in its own skeleton. Everything is inline.
-function artifact() {
-  const { fonts, css, js } = parts();
-  const html = readFileSync('index.html', 'utf8');
-  const body = html.match(/<body[^>]*>([\s\S]*)<\/body>/)[1].replace('<script src="./dist/app.js" defer></script>', '').trim();
-  const out = `<title>SSHH! Crop Doctor</title>\n<style>\n${fonts}\n${css}\n</style>\n${body}\n<script>\n${js}\n</script>\n`;
-  writeFileSync('dist/artifact.html', out);
-  console.log(`dist/artifact.html  ${(out.length / 1024 / 1024).toFixed(2)} MB`);
-  if (args.has('--artifact-test')) {
-    // roughly what the host's skeleton does, to test the fragment locally
-    const skeleton = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif;background:#fafafa}img{max-width:100%}[hidden]{display:none!important}</style></head><body>';
-    writeFileSync('dist/artifact-test.html', `${skeleton}\n${out}</body></html>`);
-  }
-}
-
 if (watch) {
   const ctx = await esbuild.context(options);
   await ctx.watch();
   console.log('Watching src/ ...');
 } else {
   await esbuild.build(options);
-  if (prod) { singleFile(); artifact(); }
+  if (prod) singleFile();
 }

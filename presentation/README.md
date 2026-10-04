@@ -4,8 +4,10 @@ The two web pages we present. Each one is its own small project, with its own RE
 
 | Folder | What it is | How to open it |
 | --- | --- | --- |
-| `talk/` | The 10-minute interactive talk. It has 3D farm scenes in Three.js and runs with the arrow keys. | Double-click `talk/shhs-talk.html`. It is the whole talk in one offline file. |
-| `site/` | The one-page site "Does this leaf have rust?". It has four chapters: the problem, the solution, the results and what is next. It is also published as a claude.ai Artifact. | Double-click `site/index.html`. |
+| `talk/` | The 10-minute interactive talk. It has 3D farm scenes in Three.js and runs with the arrow keys. | Double-click `talk/shhs-talk.html`. It is the whole talk in one offline file. Online: https://sshh-crop-doctor.vercel.app |
+| `site/` | The one-page site "Does this leaf have rust?". It has four chapters: the problem, the solution, the results and what is next. | Double-click `site/index.html`. Online: https://sshh-leaf-rust.vercel.app |
+
+Both pages are hosted on Vercel, as the projects `sshh-crop-doctor` and `sshh-leaf-rust`. The README of each page has the deploy commands.
 
 Both pages show real numbers and real pictures from this repo. Small scripts in each `tools/` folder copy them in from `runs/`, `data/` and `results/`, so the pages stay in step with the experiment. Read the README of a page before you rebuild it.
 

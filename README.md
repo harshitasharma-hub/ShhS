@@ -1,6 +1,11 @@
 <h1 align="center">ShhS</h1>
 
 <p align="center">
+  <b>Start here: <a href="https://sshh-crop-doctor.vercel.app">open the talk</a></b><br>
+  It takes about 10 minutes and runs in your browser. Use the arrow keys, scroll or swipe to move.
+</p>
+
+<p align="center">
   <b>Synthetic 3D leaves that grow the training set of a small AI.</b><br>
   We turn real coffee leaf photos into 3D scenes.<br>
   The AI answers one question about a phone photo: does this leaf have rust?

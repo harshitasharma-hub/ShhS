@@ -26,13 +26,14 @@ npm run check                                # tests every finding sentence, eve
 
 `js/app.js` is committed, so a deploy needs no build.
 
-## Publish as a claude.ai Artifact
+## Host it on Vercel
+
+The page is static and `js/app.js` is committed, so Vercel serves the files as they are. It is live at https://sshh-leaf-rust.vercel.app (the Vercel project `sshh-leaf-rust`). Only the files the page needs go online: `index.html`, `css/`, `js/`, `fonts/` and `img/` without its `.md` files.
 
 ```bash
-npm run build && node tools/make_artifact.mjs   # writes dist/artifact.html (CSS, JS and fonts inline) and dist/artifact-files.json (the image list)
+D=$(mktemp -d) && cp index.html "$D" && cp -R css js fonts "$D" && rsync -a --exclude '*.md' img "$D"
+(cd "$D" && vercel deploy --prod --yes --project sshh-leaf-rust)
 ```
-
-Then publish `dist/artifact.html` with the images from `dist/artifact-files.json` as its files, `root` set to this folder. Published on 2026-10-04: https://claude.ai/artifact/FyZrgrN2AAsjQFwPsax5vv (version 4 includes the README results and the laptop demo; anyone with the link can open it). To update it, publish the same file path again. `artifact-test.html` is a local preview of the same page under the host's skeleton.
 
 ## Where to edit
 

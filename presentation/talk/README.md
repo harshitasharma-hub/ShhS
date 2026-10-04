@@ -12,6 +12,13 @@ This folder is the talk only. It sits in `presentation/talk/` of the ShhS reposi
 
 Open `shhs-talk.html` in Chrome, Edge, Safari or Firefox. Double-clicking the file is enough. It is the whole talk in one file (code, fonts and pictures inside), so it is the one to send, copy to a USB stick, or open on the stage laptop. `index.html` is the same talk split into `styles.css`, `dist/app.js` and `fonts/`.
 
+The talk is also online at https://sshh-crop-doctor.vercel.app (the Vercel project `sshh-crop-doctor`). It is `shhs-talk.html` served as `index.html`. To update it after a build:
+
+```bash
+D=$(mktemp -d) && cp shhs-talk.html "$D/index.html"
+(cd "$D" && vercel deploy --prod --yes --project sshh-crop-doctor)
+```
+
 You move through the talk with the arrow keys or by scrolling. A swipe works on a touch screen. Space and the Page keys also work, so a presenter clicker does too.
 
 | Key | What it does |
@@ -94,7 +101,7 @@ The Leaf lab pictures (the photo, the cut-out, eight scenes with and without pho
 
 ```bash
 npm install     # once
-npm run build   # writes dist/app.js, shhs-talk.html and dist/artifact.html (the page fragment for a claude.ai artifact)
+npm run build   # writes dist/app.js and shhs-talk.html
 npm run dev     # rebuild on every change
 npm run serve   # optional local server on http://localhost:5273
 ```
