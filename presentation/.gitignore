@@ -1,0 +1,5 @@
+node_modules/
+.DS_Store
+# the page fragment for a claude.ai artifact is a build output; npm run build makes it
+dist/artifact.html
+dist/artifact-test.html

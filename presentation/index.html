@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ShhS - A crop doctor trained on leaves that never existed</title>
+  <meta name="description" content="ShhS pitch for the World Bank Small AI for Development Hackathon, Challenge 04, Agriculture. A test of whether coffee leaves rendered in Blender help a small model, Gemma 4 E2B, find rust on real photos. It runs offline on a phone.">
+  <meta name="theme-color" content="#EEF1F8">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23151834'/%3E%3Cpath d='M16 25V13M16 13c0-5 4-8 9-8 0 5-3 8-9 8ZM16 17c0-4-3-6-8-6 0 4 3 6 8 6Z' fill='none' stroke='%2319B3C8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preload" href="./fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./fonts/dm-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#panels">Skip to the talk text</a>
+  <h1 class="sr-only"><span translate="no">ShhS</span>: a crop doctor trained on leaves that never existed</h1>
+  <p class="sr-only" id="srLive" aria-live="polite"></p>
+
+  <div class="stage" id="stage">
+    <!-- Two background layers sit behind the transparent canvas. The seam clips them. -->
+    <div class="layer layer--photo" aria-hidden="true">
+      <div class="sky"></div>
+      <div class="hero-title hero-title--ink" id="heroTitleInk">
+        <span class="line"><span>A crop doctor</span></span>
+        <span class="line"><span>trained on leaves</span></span>
+        <span class="line"><span>that never existed.</span></span>
+      </div>
+      <div class="close-title close-title--ink" translate="no">ShhS</div>
+    </div>
+    <div class="layer layer--labels" aria-hidden="true">
+      <div class="dusk"></div>
+      <div class="hero-title hero-title--pale" id="heroTitlePale">
+        <span class="line"><span>A crop doctor</span></span>
+        <span class="line"><span>trained on leaves</span></span>
+        <span class="line"><span>that never existed.</span></span>
+      </div>
+      <div class="close-title close-title--pale" translate="no">ShhS</div>
+    </div>
+
+    <canvas id="gl" aria-hidden="true"></canvas>
+
+    <div class="tags" id="tags" aria-hidden="true"></div>
+    <div class="phone-frame" id="phoneFrame" aria-hidden="true">
+      <div class="phone-frame__corner tl"></div><div class="phone-frame__corner tr"></div>
+      <div class="phone-frame__corner bl"></div><div class="phone-frame__corner br"></div>
+      <div class="phone-frame__cap"><span class="dot"></span> Virtual camera</div>
+    </div>
+
+    <div class="seam" id="seam" role="slider" tabindex="0" aria-label="Split between photo and label view" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+      <span class="seam__line"></span>
+      <span class="seam__knob"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 6 3 12l5 6M16 6l5 6-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="seam__tag seam__tag--l">Photo</span>
+      <span class="seam__tag seam__tag--r">Labels</span>
+    </div>
+  </div>
+
+  <header class="hud hud--top">
+    <a class="brand" href="#" id="brand" aria-label="ShhS, back to the start">
+      <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#151834"/><path d="M16 25V13M16 13c0-5 4-8 9-8 0 5-3 8-9 8ZM16 17c0-4-3-6-8-6 0 4 3 6 8 6Z" fill="none" stroke="#19B3C8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="brand__name" translate="no">ShhS</span>
+    </a>
+    <div class="hud__right">
+      <span class="hud__chapter" id="hudChapter">Open</span>
+      <button class="btn-ghost" id="btnNotes" type="button" aria-pressed="false" title="Speaker notes (N)"><kbd>N</kbd> Notes</button>
+      <button class="btn-ghost" id="btnKeys" type="button" aria-pressed="false" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)"><kbd>?</kbd></button>
+      <button class="btn-ghost" id="btnFull" type="button" title="Full screen (F)"><kbd>F</kbd> Full screen</button>
+    </div>
+  </header>
+
+  <main class="panels" id="panels"></main>
+
+  <aside class="notes" id="notes" aria-label="Speaker notes" hidden>
+    <p class="notes__label">Say this</p>
+    <p class="notes__text" id="notesText"></p>
+  </aside>
+
+  <aside class="keys" id="keys" aria-label="Keyboard shortcuts" hidden>
+    <p class="keys__title">Keys</p>
+    <dl>
+      <div><dt><kbd>&rarr;</kbd> <kbd>Space</kbd></dt><dd>Next step</dd></div>
+      <div><dt><kbd>&larr;</kbd></dt><dd>Previous step</dd></div>
+      <div><dt>Scroll</dt><dd>Next or previous step</dd></div>
+      <div><dt><kbd>S</kbd></dt><dd>Flip photo and labels</dd></div>
+      <div><dt><kbd>N</kbd></dt><dd>Speaker notes</dd></div>
+      <div><dt><kbd>F</kbd></dt><dd>Full screen</dd></div>
+      <div><dt><kbd>P</kbd></dt><dd>Pause the motion</dd></div>
+      <div><dt><kbd>Q</kbd></dt><dd>Lite mode for slow laptops</dd></div>
+    </dl>
+  </aside>
+
+  <nav class="rail" id="rail" aria-label="Talk progress">
+    <ol class="rail__chapters" id="railChapters"></ol>
+  </nav>
+
+  <div class="preloader" id="preloader" role="status">
+    <div class="preloader__mark">
+      <svg viewBox="0 0 32 32" width="44" height="44" aria-hidden="true"><path d="M16 25V13M16 13c0-5 4-8 9-8 0 5-3 8-9 8ZM16 17c0-4-3-6-8-6 0 4 3 6 8 6Z" fill="none" stroke="#151834" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <p class="preloader__text">Rendering the leaves…</p>
+    <div class="preloader__bar"><i id="preloaderBar"></i></div>
+  </div>
+
+  <div class="nogl" id="nogl" hidden>
+    <h2>This page needs WebGL</h2>
+    <p>Open it in a recent version of Chrome, Edge, Safari or Firefox on a laptop. The talk text is below.</p>
+  </div>
+
+  <noscript><p style="padding:24px;font:16px system-ui">ShhS needs JavaScript to run the 3D talk. A crop doctor trained on leaves that never existed.</p></noscript>
+  <script src="./dist/app.js" defer></script>
+</body>
+</html>

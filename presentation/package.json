@@ -1,0 +1,20 @@
+{
+  "name": "shhs-field-doctor",
+  "version": "1.0.0",
+  "description": "ShhS pitch for the World Bank Small AI for Development Hackathon, Challenge 04, Agriculture",
+  "scripts": {
+    "build": "node build.mjs --prod",
+    "dev": "node build.mjs --watch",
+    "serve": "python3 -m http.server 5273"
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "private": true,
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource/dm-mono": "^5.3.0",
+    "esbuild": "^0.28.2",
+    "three": "^0.186.1"
+  }
+}
