@@ -281,8 +281,8 @@ export const BEATS = [
     html: `${eyebrow('Field test', 'var(--real)')}
       <h2 class="panel__title">Then real farm photos.</h2>
       <p class="panel__body">BRACOL is plain-background leaf photos, so we also test on real farm photos: ${n0(T.uganda)} smartphone photos from Uganda, and ${n0(T.kenya)} small ones from Kenya. No run trained on them.</p>
-      <p class="panel__small">The last step, a phone, is not done. The model ran on a Mac and on a rented GPU.</p>`,
-    notes: `BRACOL is not field photos, so a good score there is not enough. The field test uses real farm photos: ${n0(T.uganda)} from Uganda, with 605 rust, 737 healthy and 450 phoma, and ${n0(T.kenya)} small ones from Kenya, as a stress test only. No run trained on them. The phone step of our plan is not done. Size, speed and battery are not measured.`,
+      <p class="panel__small">The last step is a phone. We exported one 5.2 GB phone file and checked it on a Mac. It has not run on a phone yet.</p>`,
+    notes: `BRACOL is not field photos, so a good score there is not enough. The field test uses real farm photos: ${n0(T.uganda)} from Uganda, with 605 rust, 737 healthy and 450 phoma, and ${n0(T.kenya)} small ones from Kenya, as a stress test only. No run trained on them. The phone step is half done. We exported one 5.2 gigabyte phone file and checked it on a Mac. It has not run on a phone yet, so speed and battery are not measured.`,
   },
   {
     id: 'rec-8', chapter: 'recipe', scene: 'pipeline', layout: 'dock', side: 'right', env: 'studio', grid: true,
@@ -374,14 +374,14 @@ export const BEATS = [
     seam: { v: 1, mode: 'free', show: false },
     html: `${eyebrow('Small AI rules', 'var(--healthy)')}
       <h2 class="panel__title">Point, shoot, read. No signal needed.</h2>
-      <p class="panel__body">Gemma 4 E2B is made to run on a phone, and scoring needs no network. Our model has run on a laptop, not on a phone yet. It answers rust, no rust or not sure, and a person decides.</p>
+      <p class="panel__body">Gemma 4 E2B is made for phones. Our model is exported to a phone file but has not run on a phone yet. It answers rust, no rust or not sure, and a person decides.</p>
       <ul class="facts">
         ${fact('dot', `Close to the line between yes and no, it says not sure. The demo model, with its margin set on local photos, answers <b>${pc0(demo.answered)}</b> of the farm test photos and is right on <b>${pc(demo.right)}</b> of those.`)}
-        ${fact('dot', 'File size and speed on a phone are not measured. The ready phone build of Gemma 4 E2B is 2.6 GB. We have not exported ours.')}
+        ${fact('dot', 'The phone file is 5.2 GB. On a Mac it gives the same answer as PyTorch on 295 of 300 held-out photos. Speed and battery are not measured.')}
       </ul>
       <div class="chips">${chip('<i style="--c:var(--healthy)"></i>Offline')}${chip('<i style="--c:var(--healthy)"></i>Gemma 4 E2B')}${chip('<i style="--c:var(--healthy)"></i>English, Spanish, Portuguese')}${chip('<i style="--c:var(--healthy)"></i>A person decides')}</div>
       <p class="panel__small">Why AI and not SMS or search? An SMS cannot see a leaf, and a search needs a name Noor does not have.</p>`,
-    notes: `The idea is a phone that works offline. A farmer takes a photo and gets rust, no rust or not sure, and a person always decides. Today the model has run on a laptop, not on a phone. Gemma 4 E2B has a ready phone build of 2.6 gigabytes, and we have not exported ours. Not sure is built in: the margin is set on local photos, so the answers it does give reach about 95 percent. The demo copy, trained on 128 real photos, answers ${pc0(demo.answered)} of the farm test photos and is right on ${pc(demo.right)} of those. The command-line tool answers in English, Spanish or Portuguese. The phone screen is a design sketch, and its Swahili lines have not been checked by a native speaker.`,
+    notes: `The idea is a phone that works offline. A farmer takes a photo and gets rust, no rust or not sure, and a person always decides. We exported our model to one phone file of 5.2 gigabytes. On a Mac, the phone runtime gives the same answer as our PyTorch model on 295 of 300 held-out photos. It has not run on a phone yet, so speed and battery are not measured. The next step is to import the file in the Google AI Edge Gallery app on an iPhone and run it in airplane mode. Not sure is built in: the margin is set on local photos, so the answers it does give reach about 95 percent. The demo copy, trained on 128 real photos, answers ${pc0(demo.answered)} of the farm test photos and is right on ${pc(demo.right)} of those. The command-line tool answers in English, Spanish or Portuguese. The phone screen is a design sketch, and its Swahili lines have not been checked by a native speaker.`,
   },
   {
     id: 'hands-2', chapter: 'phone', scene: 'phone', layout: 'side', side: 'left', env: 'studio', grid: true,
@@ -407,7 +407,7 @@ export const BEATS = [
 ];
 
 export const SCORECARD = [
-  ['Built solution (Small AI fidelity)', '25%', `A finished study, not yet an app. Built: the BRACOL audit and frozen split, three sets of 1,353 Blender renders and 150 bad photos, ${(RESULTS.counts || {}).trained ?? '-'} fine-tuning runs of Gemma 4 E2B scored on clean and farm photos, and a command-line tool that answers rust, no rust or not sure in English, Spanish or Portuguese. Not built: the phone app. The Idea steps walk one real leaf through the render pipeline.`],
+  ['Built solution (Small AI fidelity)', '25%', `A finished study, not yet an app. Built: the BRACOL audit and frozen split, three sets of 1,353 Blender renders and 150 bad photos, ${(RESULTS.counts || {}).trained ?? '-'} fine-tuning runs of Gemma 4 E2B scored on clean and farm photos, and a command-line tool that answers rust, no rust or not sure in English, Spanish or Portuguese, a one-page web app that lets a phone on the same Wi-Fi use the model on the laptop, and one 5.2 GB phone file checked on a Mac. Not done: running the phone file on a phone, and a phone app. The Idea steps walk one real leaf through the render pipeline.`],
   ['Development relevance and impact', '20%', `Noor and the problem statement; a test on ${n0(T.uganda)} real Uganda farm photos; a cut-off set with about 100 local photos.`],
   ['Data grounding', '15%', 'The data gap; BRACOL, Uganda and Kenya named with size, license and role; renders from train leaves only; what the data does not cover.'],
   ['Evidence it works', '15%', `${(RESULTS.counts || {}).trained ?? '-'} training runs, 3 seeds each (2 for set 4), with AUC and 95% intervals on clean photos and on farm photos. Result: renders matched real photos and did not beat them on farms. The best mix ties real photos.`],
