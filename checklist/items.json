@@ -276,5 +276,11 @@
     "text": "Repo folders reorganized. Scripts are in scripts/prepare, synth, model, analyze and gpu. BRACOL photos are in data/bracol/raw. See the What is where section in README.md. The talks are in presentation/talk and presentation/site.",
     "done": true,
     "doneAt": "2026-10-04"
+  },
+  {
+    "id": "readme-hero",
+    "text": "README top rebuilt: a looping banner (a real leaf photo, the same leaf in 3D, its renders, and the bar of training photos), a results chart and a short findings table. The pictures are in docs/readme/ and come from scripts/analyze/make_readme_art.py",
+    "done": true,
+    "doneAt": "2026-10-04"
   }
 ]

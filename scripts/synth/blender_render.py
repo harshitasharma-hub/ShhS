@@ -701,4 +701,5 @@ def main():
             print(f"[fail] {j.get('out')} {e}", flush=True)
 
 
-main()
+if __name__ == "__main__":  # other scripts import this file for make_leaf and the presets
+    main()

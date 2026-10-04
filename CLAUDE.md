@@ -12,7 +12,7 @@ A study, not an app. It tests whether Blender-rendered coffee leaves help Gemma 
 - `scripts/`: one folder per job: `prepare/`, `synth/`, `model/`, `analyze/` and `gpu/`. `scripts/README.md` lists every script.
 - `runs/`: one folder per run. `runs/README.md` explains the names.
 - `results/`: tables built from `runs/`, and `figures/`.
-- `presentation/talk/` and `presentation/site/` are the two web pages. `docs/` holds the brief and the paper. `submission/` holds what we hand in. `checklist/` holds the plan.
+- `presentation/talk/` and `presentation/site/` are the two web pages. `docs/` holds the brief, the paper and `readme/`, the pictures at the top of the README. `submission/` holds what we hand in. `checklist/` holds the plan.
 - A script in one of the `scripts/` folders finds the repo root with `Path(__file__).resolve().parent.parent.parent`.
 
 ## Commands
@@ -53,6 +53,9 @@ python3 tools/sync_results.py                      # copies scores from runs/ in
 cd presentation/site && npm install && npm run build   # writes js/app.js
 cd presentation/site && npm run check                   # tests every claim in the page against runs/
 
+# the README pictures
+uv run scripts/analyze/make_readme_art.py          # writes docs/readme/hero.gif, hero-still.png and results.png. Needs Blender and ffmpeg
+
 # progress page
 python3 checklist/server.py                        # http://localhost:8765
 ```
@@ -71,7 +74,7 @@ rm -r runs/smoke
 - `scripts/model/rust_common.py` holds everything shared: the prompt, model loading, encoding, scoring (logit "Yes" minus logit "No"), the F1 cut-off, the "not sure" margin and the bootstrap. `train.py`, `score.py` and `score_field.py` are thin drivers on top of it.
 - `train.py` trains a LoRA adapter, scores BRACOL val and test, then scores the field sets at the cut-off it picked on val. `score_field.py` does that last step later for runs that are already finished.
 - A run is a folder `runs/<arm>_d<detail>_f<fraction>_s<seed>/`, where arm is `zeroshot`, `real`, `syn` or `mix`, plus `-<tag>` for a tagged synthetic recipe (`mix-v3`). A run with `metrics.json` is skipped on restart unless you pass `--force`. `make_results.py` and `calibrate_field.py` group runs by the arm in the folder name, so keep that scheme.
-- These files are generated, so edit the generator and not the file: `data/bracol/*` (`prepare_bracol.py`), `data/synthetic/README.md` (`synth/write_readme.py`), `data/field/*/README.md` (`prepare_field.py`), `results/summary.*` (`make_results.py`), `results/calibration.md` (`calibrate_field.py`), and in `presentation/talk/` the files `src/results.js`, `src/assets/`, `dist/` and `shhs-talk.html`.
+- These files are generated, so edit the generator and not the file: `data/bracol/*` (`prepare_bracol.py`), `data/synthetic/README.md` (`synth/write_readme.py`), `data/field/*/README.md` (`prepare_field.py`), `results/summary.*` (`make_results.py`), `results/calibration.md` (`calibrate_field.py`), `docs/readme/*` (`analyze/make_readme_art.py`), and in `presentation/talk/` the files `src/results.js`, `src/assets/`, `dist/` and `shhs-talk.html`.
 
 ## Rules that keep the results valid
 

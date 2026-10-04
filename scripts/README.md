@@ -13,7 +13,7 @@ The folders follow the order you use them.
 | `prepare/` | Turn the downloads into labelled data | `data/bracol/`, `data/field/` |
 | `synth/` | Cut leaves out of BRACOL photos and render them in Blender | `data/synthetic/` |
 | `model/` | Train Gemma 4 E2B, score it, and ask it about one photo | `runs/<name>/` |
-| `analyze/` | Turn runs into tables and cut-offs | `results/`, `runs/<name>/field_calibration.json` |
+| `analyze/` | Turn runs into tables and cut-offs, and make the pictures of the main README | `results/`, `runs/<name>/field_calibration.json`, `docs/readme/` |
 | `gpu/` | Run the jobs on a rented GPU | the same files, on the other machine |
 
 ## prepare/
@@ -37,6 +37,7 @@ The Blender pipeline. `data/synthetic/README.md` explains each step. The scripts
 | `make_combo.py` | Makes set 4: all of v1 plus the new photos of v3. It writes only a manifest. |
 | `audit_shortcuts.py` | Checks if the photo background alone predicts rust. |
 | `make_sheet.py` | Makes a contact sheet from a manifest, to look at by eye. |
+| `render_turntable.py` | Renders one 3D leaf swaying in front of a camera, as transparent frames. It reuses the leaf code of `blender_render.py`. `analyze/make_readme_art.py` calls it for the banner. |
 | `write_readme.py` | Writes `data/synthetic/README.md` from the manifests. |
 
 ## model/
@@ -57,6 +58,7 @@ The Blender pipeline. `data/synthetic/README.md` explains each step. The scripts
 | `make_results.py` | Collects `runs/*/metrics.json` into `results/summary.md` and `results/summary.csv`. |
 | `calibrate_field.py` | Sets the cut-off and the "not sure" margin on local Uganda photos. Writes `results/calibration.md`. |
 | `save_calibration.py` | Saves that setting for one run in `runs/<name>/field_calibration.json`. `predict.py` reads it. |
+| `make_readme_art.py` | Makes the pictures at the top of the main README: the banner (`docs/readme/hero.gif` and `hero-still.png`) and the results chart (`docs/readme/results.png`). It reads the manifests and `results/summary.csv`, and calls Blender and ffmpeg. |
 
 ## gpu/
 
