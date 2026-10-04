@@ -25,11 +25,11 @@ export function initSummary() {
     { ids: ['v3-moved'], link: '#qa-v3', title: 'Our first fix, set 3, moved the errors.',
       text: `Set 3 swaps in look-alike photos. Phoma answers improve (${n(u.mix.other.mean)} to *${n(u.v3.mix.other.mean)}* of 100), but healthy leaves get worse (${n(u.mix.healthy.mean)} to *${n(u.v3.mix.healthy.mean)}*) and so does rust found (${n(u.mix.sens.mean)} to *${n(u.v3.mix.sens.mean)}*).` },
     { ids: ['v4-better', 'v4-trade'], link: '#qa-v3', title: 'Our second fix, set 4, nearly closes the gap.', skip: !(u.v4 && u.v4.mix.n),
-      text: `Set 4 keeps all of set 1 and adds the look-alikes. Right answers rise from ${n(u.mix.acc.mean)} to *${n(u.v4.mix.acc.mean)}* out of 100, close to the ${n(u.real.acc.mean)} of real photos alone, and phoma leaves answered right from ${n(u.mix.other.mean)} to *${n(u.v4.mix.other.mean)}*. But it finds less rust than real photos alone: *${n(u.v4.mix.sens.mean)}* of 100 against ${n(u.real.sens.mean)}.` },
+      text: `Set 4 keeps all of set 1 and adds the look-alikes. Right answers rise from ${n(u.mix.acc.mean)} to *${n(u.v4.mix.acc.mean)}* out of 100, close to the ${n(u.real.acc.mean)} of real photos alone, and phoma leaves answered right from ${n(u.mix.other.mean)} to *${n(u.v4.mix.other.mean)}*. But it finds less rust than real photos alone: *${n(u.v4.mix.sens.mean)}* of 100 against ${n(u.real.sens.mean)}. We made sets 3 and 4 after we studied these same photos, so read them as a lead, not as proof.` },
     { ids: ['cal-100'], link: '#qa-local', title: 'About 100 local photos are enough to set the cut-off.',
       text: C['cal-100'].ok ? `${C['cal-100'].text}${C['cal-set4'].ok ? ' ' + C['cal-set4'].text : ''}` : '' },
-    { ids: ['plain-phone'], link: '#phonestat', title: 'We have not built the phone app yet.',
-      text: C['plain-phone'].ok ? `The phone code returns the plain yes or no, not the score. ${C['plain-phone'].text}` : '' },
+    { ids: ['plain-phone', 'demo-numbers'], link: '#demo', title: 'A laptop demo works. The phone app is not built yet.',
+      text: C['plain-phone'].ok && C['demo-numbers'].ok ? `${C['demo-numbers'].text} The phone code returns the plain yes or no, not the score. ${C['plain-phone'].text}` : '' },
   ];
   const shown = items.filter((it) => !it.skip);
   shown.forEach((it, i) => {

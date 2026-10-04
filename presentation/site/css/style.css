@@ -455,7 +455,7 @@ details.tbl .table-wrap{margin-top:8px}
 .phone-ui{display:grid;gap:14px;justify-items:start;align-content:center}
 @media(max-width:900px){.phone-wrap{grid-template-columns:1fr;justify-items:center}.phone-ui{justify-items:center;text-align:center}}
 .phonestat{display:grid;gap:16px}
-.phonestat__cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,3vw,40px)}
+.phonestat__cols{display:grid;gap:clamp(18px,3vw,40px)}
 .phonestat h5{font:800 21px/1.1 var(--f-display);margin-bottom:.4rem}
 .phonestat p{font-size:16px}
 .phonestat p+p{margin-top:.7rem}
@@ -464,7 +464,7 @@ details.tbl .table-wrap{margin-top:8px}
 .plain th:first-child,.plain td:first-child{text-align:left}
 .plain thead th{font-size:13px;color:var(--ink-3);font-weight:700}
 .plain caption{text-align:left;font-weight:700;padding-bottom:6px;font-size:15px}
-@media(max-width:800px){.phonestat__cols{grid-template-columns:1fr}.plain{overflow:auto}}
+@media(max-width:800px){.plain{overflow:auto}}
 
 /* ---------- Results ---------- */
 .versions .lede{margin:1rem 0 1.6rem}
@@ -622,6 +622,48 @@ details.more[open]>summary::after{transform:rotate(-135deg) translateY(-2px)}
 .links,.credits{list-style:none;margin:0;padding:0;display:grid;gap:12px;font-size:15.5px}
 .credits li{color:var(--ink-2)}.credits b{color:var(--ink)}
 @media(max-width:900px){.close__grid{grid-template-columns:1fr}}
+
+
+/* ---------- The brief's five rules ---------- */
+.brief__head{max-width:820px;margin-bottom:clamp(22px,3vw,40px);display:grid;gap:1rem}
+.rules{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.rule{display:grid;grid-template-columns:minmax(0,1.05fr) auto minmax(0,2.1fr);gap:8px clamp(14px,2.4vw,32px);align-items:start;padding:16px 20px;background:var(--paper);border:1px solid var(--hair);border-radius:14px}
+.rule__q{font:800 clamp(20px,1.7vw,24px)/1.15 var(--f-display)}
+.rule__status{white-space:nowrap;font-weight:700;color:var(--ink);padding-top:.15em}
+.rule__a{font-size:16px;line-height:1.5;color:var(--ink-2);max-width:none}
+@media(max-width:900px){.rule{grid-template-columns:1fr}.rule__status{padding-top:0}}
+
+/* ---------- The laptop demo ---------- */
+.demo{display:grid;gap:16px}
+.demo__head{display:grid;gap:10px;justify-items:start}
+.demo__grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.demo__item{display:grid;gap:8px;align-content:start}
+@supports (grid-template-rows:subgrid){.demo__item{grid-row:span 4;grid-template-rows:subgrid}}
+.demo__photo{aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:var(--daylight);border:1px solid var(--hair)}
+.demo__photo img{width:100%;height:100%;object-fit:cover}
+.result--demo{padding:10px 12px;min-height:0;gap:10px}
+.result--demo .result__icon{width:36px;height:36px}
+.result--demo .result__icon svg{width:21px;height:21px}
+.result--demo .result__word{font-size:clamp(22px,2vw,26px)}
+.result--demo .result__sub{font-size:13.5px}
+.demo__truth{font-size:14.5px;color:var(--ink-2);max-width:none}
+.demo__score{font:500 12px/1.4 var(--f-mono);color:var(--ink-3);max-width:none}
+.demo__stat{font-size:clamp(18px,1.5vw,21px);line-height:1.5;max-width:60ch}
+.demo__stat em{font-weight:800;box-shadow:inset 0 -.38em 0 rgba(14,31,26,.1)}
+code{font:600 .9em var(--f-mono);background:var(--daylight);padding:.1em .4em;border-radius:5px}
+@media(max-width:900px){.demo__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- Warnings and the not-sure rule ---------- */
+.qa__warn{max-width:60ch;padding:12px 16px;border-left:5px solid var(--ink-2);background:var(--paper);border-radius:0 10px 10px 0;font-size:15.5px;line-height:1.5;color:var(--ink-2)}
+.qa__warn b{color:var(--ink)}
+.ns-rule{display:grid;gap:14px;margin-top:clamp(28px,4vw,48px)}
+.ns-rule>p{max-width:62ch}
+.ns-rule__cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,3vw,40px)}
+.ns-rule h5{font:800 21px/1.1 var(--f-display);margin-bottom:.4rem}
+.ns-rule__cols p{font-size:16px;max-width:none}
+.ns-rule__cols em{font-weight:800;box-shadow:inset 0 -.38em 0 rgba(14,31,26,.1)}
+@media(max-width:800px){.ns-rule__cols{grid-template-columns:1fr}}
+.phonestat__cols{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 
 /* ---------- To do items and drawers ---------- */
 .pending{position:relative;display:flex;gap:12px;align-items:flex-start;margin-top:1.2rem;padding:14px 16px;max-width:60ch;border:1.5px dashed var(--ink-3);background:repeating-linear-gradient(135deg,transparent 0 7px,var(--hair-2) 7px 8px);color:var(--ink-2);border-radius:12px;transition:box-shadow .3s}

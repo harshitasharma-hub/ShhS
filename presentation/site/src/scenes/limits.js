@@ -1,6 +1,7 @@
 // What our data does not cover (the brief scores this), the region plan, and the two drawers: the word list and the to-do list.
 import { $, $$, h } from '../lib/dom.js';
-import { COVERAGE, LIMITS, REGION, EXTRA_PENDING, WORDS } from '../content.js';
+import { COVERAGE, LIMITS, BRIEF_RULES, REGION, EXTRA_PENDING, WORDS } from '../content.js';
+import { facts, claimMap } from '../lib/claims.js';
 import { DIAL_META } from '../data/inline.js';
 import { missingRuns, ARM } from '../lib/stats.js';
 
@@ -16,7 +17,27 @@ export function initLimits() {
       ...Object.entries(STATUS).map(([k, v]) => h('span', { class: 'cov', 'data-s': k }, h('i'), v))));
   }
   const list = $('#limits-list');
-  if (list) LIMITS.forEach((l) => list.append(h('li', { 'data-reveal': '' }, h('b', null, l.h), l.t)));
+  if (list) {
+    const C = claimMap(facts());
+    LIMITS.forEach((l) => {
+      const extra = l.claim && C[l.claim] && C[l.claim].ok ? ' ' + C[l.claim].text.replace(/\*/g, '') : '';
+      list.append(h('li', { 'data-reveal': '' }, h('b', null, l.h), l.t + extra));
+    });
+  }
+}
+
+/** The brief's five rules, with the mark of the coverage map and one plain sentence each. */
+export function initBrief() {
+  const ol = $('#rules');
+  if (!ol) return;
+  const C = claimMap(facts());
+  BRIEF_RULES.forEach((r) => {
+    const text = r.q ? (C[r.q] && C[r.q].ok ? C[r.q].text.replace(/\*/g, '') : 'The numbers changed since we wrote this line. See the not-sure section.') : r.t;
+    ol.append(h('li', { class: 'rule' },
+      h('h4', { class: 'rule__q' }, r.rule),
+      h('p', { class: 'cov rule__status', 'data-s': r.s }, h('i'), h('span', null, r.label)),
+      h('p', { class: 'rule__a' }, text)));
+  });
 }
 
 export function initRegion() {

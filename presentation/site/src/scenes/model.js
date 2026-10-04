@@ -3,12 +3,59 @@ import { $, $$, h, icon, int } from '../lib/dom.js';
 import { PHOTOS, SCORES, PLAIN, COUNTS } from '../data/generated.js';
 import { marginFor, verdictOf, scoreFor, VERDICT } from '../lib/verdict.js';
 import { tableTwin } from '../lib/charts.js';
+import { DEMO } from '../data/demo.js';
+import { facts, claimMap } from '../lib/claims.js';
+import { rich } from './summary.js';
 
 const ICON = { yes: 'spots', no: 'check', unsure: 'ask' };
+// The three lines of scripts/model/predict.py, word for word
+const ANSWERS = {
+  en: { yes: 'Rust: yes', no: 'Rust: no', unsure: 'Not sure. Ask a person to look at this leaf.' },
+  es: { yes: 'Roya: sí', no: 'Roya: no', unsure: 'No estoy seguro. Pida a una persona que mire esta hoja.' },
+  pt: { yes: 'Ferrugem: sim', no: 'Ferrugem: não', unsure: 'Não tenho certeza. Peça a uma pessoa para olhar esta folha.' },
+};
 
 export function initModel() {
+  initDemo();
   initPhone();
   initPlain();
+  initFacts();
+}
+
+/** The laptop demo: four real Uganda photos and the answers of the demo model, in the three languages of predict.py. */
+function initDemo() {
+  const grid = $('#demo-grid'), seg = $('#demo-lang'), stat = $('#demo-numbers');
+  if (!grid || !DEMO || !DEMO.photos.length) return;
+  let lang = 'en';
+  const truth = (p) => (p.rust ? 'rust' : p.group === 'healthy' ? 'no rust, a healthy leaf' : p.group === 'other' ? 'no rust, but another disease (phoma)' : 'no rust');
+  const sign = (v) => (v >= 0 ? '+' : '') + v.toFixed(2);
+  function paint() {
+    grid.replaceChildren(...DEMO.photos.map((p) => {
+      const full = ANSWERS[lang][p.verdict], cut = full.indexOf('. ');
+      const word = cut < 0 ? full : full.slice(0, cut + 1), rest = cut < 0 ? [] : [full.slice(cut + 2)];
+      return h('li', { class: 'demo__item' },
+        h('div', { class: 'demo__photo' }, h('img', { src: p.file, alt: `A real Uganda coffee leaf photo. Label: ${truth(p)}.`, width: 256, height: 256, loading: 'lazy', decoding: 'async' })),
+        h('div', { class: 'result result--demo', 'data-verdict': p.verdict },
+          h('span', { class: 'result__icon' }, icon(ICON[p.verdict])),
+          h('div', { class: 'result__body', lang }, h('b', { class: 'result__word' }, word), rest.length ? h('span', { class: 'result__sub' }, rest.join(' ')) : null)),
+        h('p', { class: 'demo__truth' }, 'Label from the dataset: ', h('b', null, truth(p))),
+        h('p', { class: 'demo__score' }, `score ${sign(p.score)}, cut-off ${sign(DEMO.cutoff)}, band ${DEMO.margin.toFixed(2)}`));
+    }));
+    $$('button', seg).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  }
+  $$('button', seg).forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; paint(); }));
+  paint();
+  const C = claimMap(facts());
+  if (C['demo-numbers'].ok) rich(stat, C['demo-numbers'].text); else stat.remove();
+}
+
+/** Plain sentences from the data: what training costs, and why a smaller picture matters on a phone. */
+function initFacts() {
+  const C = claimMap(facts());
+  const cost = $('#cost-line');
+  if (cost) { if (C['train-cost'].ok) cost.textContent = C['train-cost'].text; else cost.remove(); }
+  const d = $('#ps-detail');
+  if (d) { if (C['detail-small'].ok) d.textContent = C['detail-small'].text; else d.parentElement.remove(); }
 }
 
 function initPhone() {

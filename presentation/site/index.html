@@ -83,7 +83,7 @@
     <p class="lede lede--wide">We asked one question: <b>do practice photos made in 3D help a small AI find rust on real farm photos?</b> This is what we did, what we found, and what comes next.</p>
 
     <ol class="flow" aria-label="What we did">
-      <li><figure><img src="img/pipeline/897_original.webp" alt="A real photo of a coffee leaf with rust" width="400" height="200" loading="lazy" decoding="async"></figure><h3>Real leaf photos</h3><p><span data-bind="n.bracol.train">1,225</span> labelled photos of coffee leaves, on plain paper.</p></li>
+      <li><figure><img src="img/pipeline/897_original.webp" alt="A real photo of a coffee leaf with rust" width="400" height="200" loading="lazy" decoding="async"></figure><h3>Real leaf photos</h3><p><span data-bind="n.bracol.train">1,225</span> labelled photos of coffee leaves, on a plain white background.</p></li>
       <li><figure><img src="img/dial/897_overcast_phone.webp" alt="A practice photo: the same leaf rendered in 3D in a field scene" width="400" height="200" loading="lazy" decoding="async"></figure><h3>Practice photos in 3D</h3><p>We bend each real leaf in 3D and place it in light, weather and clutter. It keeps its label.</p></li>
       <li><figure class="flow__icon"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="19" y="6" width="26" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="50" r="2.6" fill="currentColor"/><path d="M26 30c0-7 5-12 13-13 0 8-5 13-13 13Z" fill="currentColor" opacity=".35"/><circle cx="33" cy="26" r="2" fill="var(--rust)"/></svg></figure><h3>Teach the small AI</h3><p>It learns to answer rust, no rust, or not sure. We try four ways of teaching it, then two fixes.</p></li>
       <li><figure><img src="img/verdict/u_fi_01243.webp" alt="A real phone photo of a coffee leaf with rust, taken on a farm in Uganda" width="200" height="200" loading="lazy" decoding="async"></figure><h3>Test on real farm photos</h3><p><span data-bind="n.uganda.kept">1,792</span> photos from Ugandan farms that the AI never saw.</p></li>
@@ -196,7 +196,7 @@
     <div class="compare" id="compare">
       <div class="compare__side compare__side--tidy">
         <div class="mosaic mosaic--tidy" id="mosaic-tidy" aria-hidden="true"></div>
-        <p class="compare__cap"><span class="tag tag--real">Real</span> BRACOL, Brazil, plain paper, <span data-bind="n.bracol.total">1,747</span> leaves</p>
+        <p class="compare__cap"><span class="tag tag--real">Real</span> BRACOL, Brazil, white background, <span data-bind="n.bracol.total">1,747</span> leaves</p>
       </div>
       <div class="compare__side compare__side--messy" id="compare-messy">
         <div class="mosaic mosaic--messy" id="mosaic-messy" aria-hidden="true"></div>
@@ -210,7 +210,7 @@
       <div class="shortcut__text">
         <h4 class="h-card" data-reveal>A trap we found in BRACOL</h4>
         <p data-reveal>In BRACOL, the colour of the photo border alone predicts rust. Three numbers and no leaf give an <button type="button" class="term" data-term="auc">AUC</button> of <b data-bind="shortcut.bracol.auc">0.74</b>. That is far from a coin flip (0.50).</p>
-        <p data-reveal>An AI can learn the paper and skip the leaf. Our practice photos have random backgrounds, and the same check gives <b data-bind="shortcut.synthetic.auc">0.50</b>.</p>
+        <p data-reveal>An AI can learn the background and skip the leaf. Our practice photos have random backgrounds, and the same check gives <b data-bind="shortcut.synthetic.auc">0.50</b>.</p>
         <p class="note" data-reveal>The chart shows the border colour of each photo, split by whether the leaf has rust. Two separate curves mean the colour gives it away. Two curves on top of each other mean it does not.</p>
       </div>
       <figure class="chart card" id="chart-shortcut" aria-labelledby="shortcut-title">
@@ -247,8 +247,8 @@
     <div class="pipeline__sticky">
       <div class="pipeline__left">
         <ol class="steps" id="pl-steps">
-          <li data-step="0"><span class="steps__n">1</span><div><h4>Start with a real leaf</h4><p>BRACOL leaf 897, photographed on paper. Its label is rust, severity 4. Only leaves from the training split are ever used. Validation and test leaves stay out.</p></div></li>
-          <li data-step="1"><span class="steps__n">2</span><div><h4>Cut it out and find the spots</h4><p>A script removes the paper, then finds the yellow-orange spots and the brown patches. <span data-bind="n.textures.usable">1,221</span> of <span data-bind="n.textures.ofTrain">1,225</span> training leaves pass the checks.</p></div></li>
+          <li data-step="0"><span class="steps__n">1</span><div><h4>Start with a real leaf</h4><p>BRACOL leaf 897, photographed on a white background. Its label is rust, severity 4. Only leaves from the training split are ever used. Validation and test leaves stay out.</p></div></li>
+          <li data-step="1"><span class="steps__n">2</span><div><h4>Cut it out and find the spots</h4><p>A script removes the background, then finds the yellow-orange spots and the brown patches. <span data-bind="n.textures.usable">1,221</span> of <span data-bind="n.textures.ofTrain">1,225</span> training leaves pass the checks.</p></div></li>
           <li data-step="2"><span class="steps__n">3</span><div><h4>Bend it in 3D and pick a background</h4><p>Blender wraps the photo on a leaf with a fold, a droop, a twist and wavy edges. Here you can change the bend and the background yourself.</p></div></li>
           <li data-step="3"><span class="steps__n">4</span><div><h4>Put it in the field</h4><p>Light and weather come from eight presets. Blurred leaves, stems and soil sit behind it, and a virtual camera takes the picture. One image takes a few seconds.</p></div></li>
           <li data-step="4"><span class="steps__n">5</span><div><h4>Make it look like a phone photo</h4><p>The picture gets the flaws of a real phone: colour shifts, blur, noise, a darker corner and JPEG damage. We keep the settings of every picture.</p></div></li>
@@ -261,8 +261,8 @@
         <div class="pl-frame" id="pl-frame">
           <img class="pl-plate" id="pl-plate-a" alt="" width="1024" height="512" decoding="async">
           <img class="pl-plate" id="pl-plate-b" alt="" width="1024" height="512" decoding="async">
-          <figure class="pl-layer pl-original"><img src="img/pipeline/897_original.webp" alt="The original BRACOL photo of leaf 897 on white paper" width="1600" height="800" decoding="async" loading="lazy"></figure>
-          <div class="pl-cut" id="pl-cut"><img src="img/pipeline/897_cutout.webp" alt="The leaf cut out from the paper" width="1400" height="525" decoding="async" loading="lazy"><ul class="pl-lesions" id="pl-lesions"></ul></div>
+          <figure class="pl-layer pl-original"><img src="img/pipeline/897_original.webp" alt="The original BRACOL photo of leaf 897 on a white background" width="1600" height="800" decoding="async" loading="lazy"></figure>
+          <div class="pl-cut" id="pl-cut"><img src="img/pipeline/897_cutout.webp" alt="The leaf cut out from its background" width="1400" height="525" decoding="async" loading="lazy"><ul class="pl-lesions" id="pl-lesions"></ul></div>
           <i class="pl-scan" id="pl-scan" aria-hidden="true"></i>
           <canvas class="pl-3d" id="pl-canvas" aria-label="A 3D coffee leaf. Drag it, or use the arrow keys, to turn it. The sliders bend it." tabindex="-1"></canvas>
           <figure class="pl-layer pl-scene"><canvas id="pl-resolve" width="1024" height="512" aria-label="A render of the leaf in a field scene"></canvas></figure>
@@ -330,6 +330,7 @@
       <h3 class="h-section" id="model-title">The small AI</h3>
       <p data-fact="gemma">The AI is Gemma 4 E2B, an open model from Google DeepMind with 2.3 billion effective parameters and an Apache 2.0 licence. We teach it with <button type="button" class="term" data-term="lora">LoRA</button>, which trains a small add-on and leaves the base model alone. We show it a photo and ask one question. The answer is one word.</p>
       <p>Why a photo AI and not an SMS or a spreadsheet? Rust has to be seen, and an SMS can't look at a leaf. The officer is far away. A photo is the shortest way to ask.</p>
+      <p id="cost-line"></p>
     </div>
 
     <div class="decide card" id="decide" aria-labelledby="decide-title">
@@ -345,6 +346,21 @@
         <li><b>A person decides.</b> "Not sure" sends Noor to the extension officer. The tool never acts for her.</li>
         <li><b>No rust is not healthy.</b> "No rust found" means no rust. The leaf can still have another problem.</li>
       </ul>
+    </div>
+
+    <div class="demo card" id="demo" aria-labelledby="demo-title">
+      <div class="demo__head">
+        <h4 class="h-card" id="demo-title">The demo that runs today</h4>
+        <p>A command on a laptop reads a leaf photo and prints one of three answers. It needs no internet. It is not a phone yet.</p>
+        <div class="seg" role="group" aria-label="Language of the answers" id="demo-lang">
+          <button type="button" aria-pressed="true" data-lang="en">English</button>
+          <button type="button" aria-pressed="false" data-lang="es">Español</button>
+          <button type="button" aria-pressed="false" data-lang="pt">Português</button>
+        </div>
+      </div>
+      <ul class="demo__grid" id="demo-grid"></ul>
+      <p class="demo__stat" id="demo-numbers"></p>
+      <p class="note">The photos are real Uganda photos from the held-out test sample. The model is the "real photos, 10%" version. Its cut-off and its band were set on <span data-bind="demo.pool">1,492</span> other Uganda photos. The command is <code>scripts/model/predict.py</code>. No native speaker has checked the Spanish and Portuguese lines.</p>
     </div>
 
     <div class="phone-wrap">
@@ -366,7 +382,7 @@
           <button type="button" aria-pressed="false" data-v="unsure">Not sure</button>
         </div>
         <p class="note"><b>Design sketch.</b> The photos and answers are real model output on test photos. The app is not built yet.</p>
-        <aside class="pending" data-pending="voice" data-need="Swahili voice readout of the answer, and a native speaker check of every phone line"><span class="pending__tag">To do</span><p><b>Voice and language check.</b> A Swahili voice readout, and a native speaker's check of every line on this screen.</p></aside>
+        <aside class="pending" data-pending="voice" data-need="Swahili voice readout of the answer, and a native speaker check of every Swahili, Spanish and Portuguese line"><span class="pending__tag">To do</span><p><b>Voice and language check.</b> A Swahili voice readout, and a native speaker's check of every Swahili line on this screen and of the Spanish and Portuguese lines of the demo.</p></aside>
       </div>
     </div>
 
@@ -377,11 +393,16 @@
           <h5>Not built yet</h5>
           <p>We have not exported our trained model or run it on a phone. The Android build of the untrained model is one 2.6&nbsp;GB file, and the phone software is Google's LiteRT-LM.</p>
           <p>Google reports 0.3 seconds to the first word on a Samsung S26 Ultra with a text question. We found no speeds for photos or for cheaper phones.</p>
+          <p>For scale: Wadhwani AI's cotton pest app runs a small model of 11.2 million parameters on the phone. A doubtful photo goes to a larger model in the cloud, then to a human expert. Their paper says farmers resist apps above about 50&nbsp;MB.</p>
         </div>
         <div>
           <h5>A catch with "not sure"</h5>
           <p>The Android code returns the written answer, not the score. Our "not sure" band needs the score. So the phone needs another way: for example, a trained third answer.</p>
           <p>If the phone reads only the plain yes or no, the untrained AI is not good enough. See the table.</p>
+        </div>
+        <div>
+          <h5>What helps</h5>
+          <p id="ps-detail"></p>
         </div>
       </div>
       <div class="plain" id="plain"></div>
@@ -445,6 +466,7 @@
         <h4 class="qa__q" id="qa-v3-q">Did our fixes work?</h4>
         <p class="qa__a" id="qa-v3-a"></p>
         <p class="qa__a" id="qa-v4-a"></p>
+        <p class="qa__warn" id="qa-v4-warn"><b>A fair warning.</b> We made sets 3 and 4 after we looked at the Uganda photos that set 1 got wrong, and those photos include the 300 used for the local-photo test. So the Uganda scores of sets 3 and 4 are not a clean test. We made set 1 before the first farm score came in.</p>
         <div class="qa__pair">
           <figure class="chart card"><div class="chart__plot" id="qa-v3-plot"></div><figcaption class="chart__foot" id="qa-v3-foot">Right answers out of 100 on the real Uganda photos. "Both" means real and practice photos together, with all the real photos. A tick on a bar is one training run.</figcaption></figure>
           <div class="v3pics">
@@ -457,7 +479,7 @@
       <article class="qa" id="qa-local" aria-labelledby="qa-local-q">
         <h4 class="qa__q" id="qa-local-q">How many local photos does it take to set the cut-off?</h4>
         <p class="qa__a" id="qa-local-a"></p>
-        <figure class="chart card"><div class="chart__plot" id="qa-local-plot"></div><figcaption class="chart__foot" id="qa-local-foot">Right answers on 300 test photos from Uganda, when the cut-off is set on a small sample of other Uganda photos.</figcaption></figure>
+        <figure class="chart card"><div class="chart__plot" id="qa-local-plot"></div><figcaption class="chart__foot" id="qa-local-foot">Right answers on 300 test photos from Uganda, when the cut-off is set on a small sample of other Uganda photos. The sample and the test photos come from the same Uganda set. This shows what local photos can do, not how the AI travels to another region.</figcaption></figure>
       </article>
     </div>
   </div>
@@ -485,6 +507,18 @@
       <div class="chart__plot" id="band-plot"></div>
       <div class="chart__legend" id="band-legend"><span class="lg lg--rust">Photos with rust</span><span class="lg lg--none">Photos without rust</span><span class="lg lg--phoma">Phoma photos</span><span class="lg lg--band">Not sure band</span></div>
     </figure>
+  </div>
+  <div class="wrap">
+    <div class="card ns-rule" id="ns-rule">
+      <h4 class="h-card">How we set the band in the project</h4>
+      <p>Our rule: the band is the smallest one for which the photos the AI answers reach 95% accuracy. We can set it on two kinds of photos.</p>
+      <div class="ns-rule__cols">
+        <div><h5>From clean photos</h5><p id="ns-rule-bracol"></p></div>
+        <div><h5>From local photos</h5><p id="ns-rule-local"></p></div>
+      </div>
+      <div id="ns-rule-table"></div>
+      <p class="note">We have not scored the 150 bad photos with either band yet.</p>
+    </div>
   </div>
 </section>
 
@@ -568,8 +602,18 @@
     <div class="chapter__head">
       <h2 class="h-chapter" id="next-title">What is next</h2>
       <p class="lede lede--wide">Our data has gaps, and we say where. The most useful next step is to make the practice photos look like one real place, and to check them against about 100 photos from there.</p>
-      <p class="chapter__toc">In this chapter: <a href="#limits">What our data does not cover</a> · <a href="#local">Making it local</a> · <a href="#take">Our take</a></p>
+      <p class="chapter__toc">In this chapter: <a href="#brief">Where we stand against the brief</a> · <a href="#limits">What our data does not cover</a> · <a href="#local">Making it local</a> · <a href="#take">Our take</a></p>
     </div>
+  </div>
+</section>
+
+<section class="sec brief" id="brief" aria-labelledby="brief-title">
+  <div class="wrap">
+    <div class="brief__head">
+      <h3 class="h-section" id="brief-title">Where we stand against the brief</h3>
+      <p class="lede">The brief sets five rules for the tool. Here is each rule, and what is true today.</p>
+    </div>
+    <ol class="rules" id="rules"></ol>
   </div>
 </section>
 
@@ -615,7 +659,7 @@
     <p class="label">Our take</p>
     <h3 class="take__quote" id="take-title">Localizing AI means the training world looks like the farm.</h3>
     <div class="take__body">
-      <p>A leaf AI is only as local as its photos. Ours learned from Brazilian leaves on paper, and from 3D practice photos of them. It scores well on clean photos. On Uganda phone photos the practice photos did not beat real photos alone, and the closest version (set 4) needed look-alike photos that we added after we studied its mistakes. It has never seen Noor's farm.</p>
+      <p>A leaf AI is only as local as its photos. Ours learned from Brazilian leaves on a white background, and from 3D practice photos of them. It scores well on clean photos. On Uganda phone photos the practice photos did not beat real photos alone, and the closest version (set 4) needed look-alike photos that we added after we studied its mistakes. It has never seen Noor's farm.</p>
       <p>So we localize the data first. We change the light, the soil, the crops next to the coffee and the phone camera in the practice photos, then test on real photos from the place. We also localize trust. The tool says "not sure" when it should, and Noor and her officer decide.</p>
     </div>
   </div>
@@ -632,7 +676,7 @@
       <div>
         <h2 class="label">Links</h2>
         <ul class="links">
-          <li><span class="ph" data-pending="repo-link" data-need="Public GitHub repository URL">Repository: add the public URL</span></li>
+          <li>Repository: <a href="https://github.com/harshitasharma-hub/ShhS" rel="noopener">github.com/harshitasharma-hub/ShhS</a></li>
           <li><span class="ph" data-pending="demo-link" data-need="Hosted demo URL">Hosted demo: add the URL</span></li>
           <li><span class="ph" data-pending="team" data-need="Team names, team photo, and the three 60-second videos">Team: Dresden Hub · names, photo and videos to add</span></li>
         </ul>
@@ -640,9 +684,10 @@
       <div>
         <h2 class="label">Data and credit</h2>
         <ul class="credits">
-          <li><b>BRACOL</b> leaf photos: Krohling, Esgario and Ventura, Mendeley Data, CC BY 4.0. Our practice photos are adapted from it.</li>
-          <li><b>Uganda</b>: "A Machine Learning Dataset for Classification of Common Coffee Leaf Diseases in Uganda", Chelangat, Anirwoth, Mayanja and Sserwadda, Mendeley Data 2025, CC BY 4.0. Test only.</li>
+          <li><b>BRACOL</b> leaf photos: Krohling, Esgario and Ventura, Mendeley Data, CC BY 4.0. We use a complete copy from Hugging Face (luisangelico/bracol), because the Mendeley zip is cut off. Our practice photos are adapted from it.</li>
+          <li><b>Uganda</b>: "A Machine Learning Dataset for Classification of Common Coffee Leaf Diseases in Uganda", Chelangat, Anirwoth, Mayanja and Sserwadda, Mendeley Data 2025, CC BY 4.0. We keep 1,792 unique photos from 3,322 files. Test only.</li>
           <li><b>Kenya</b>: JMuBEN, Jepkoech et al., Data in Brief 36:107142, 2021, CC BY. We hold a 128 pixel copy. Stress test only.</li>
+          <li><b>Method</b>: we followed Klein et al. (2024), "Synthetic data at scale", Frontiers in Plant Science 15:1360113 (CC BY). Its lesson: judge synthetic data by the score on real photos, not by how real the renders look.</li>
           <li><b>Gemma 4 E2B</b>, Google DeepMind, Apache 2.0. Practice photos made in Blender. Type: Big Shoulders, Atkinson Hyperlegible Next, JetBrains Mono (SIL Open Font License). 3D by three.js (MIT).</li>
         </ul>
       </div>

@@ -1,14 +1,41 @@
 // The guardrail: a band around the cut-off where the AI says "not sure". Real scores, a live trade-off.
 import { $, $$, h, s as svgEl, int } from '../lib/dom.js';
-import { SCORES } from '../data/generated.js';
+import { SCORES, CALIBRATION } from '../data/generated.js';
+import { facts, claimMap } from '../lib/claims.js';
 import { MODELS, quantile, marginFor } from '../lib/verdict.js';
-import { scale, ticks, svgRoot, fit } from '../lib/charts.js';
+import { scale, ticks, svgRoot, fit, tableTwin } from '../lib/charts.js';
 import { tip } from '../lib/engine.js';
 import { rich } from './summary.js';
 
 const pct = (v) => (v == null || Number.isNaN(v) ? 'n/a' : Math.round(v * 100) + '%');
 
+/** How the project sets the band, on clean photos and on local photos, with the whole table behind it. */
+function initRule() {
+  const box = $('#ns-rule');
+  if (!box) return;
+  const C = claimMap(facts());
+  const put = (id, claim) => { const el = $(id); if (!el) return; if (C[claim].ok) rich(el, C[claim].text); else el.textContent = 'The numbers changed since we wrote this line. Read the table.'; };
+  put('#ns-rule-bracol', 'ns-bracol');
+  put('#ns-rule-local', 'ns-local');
+  const rows = (CALIBRATION && CALIBRATION.whole) || [];
+  if (!rows.length) return;
+  const name = (r) => {
+    const set = r.arm.endsWith('-combo') ? ', set 4' : r.arm.endsWith('-v3') ? ', set 3' : '';
+    const base = r.arm.replace(/-(combo|v3)$/, '');
+    if (base === 'zeroshot') return 'Untrained AI';
+    if (base === 'real') return `Real photos, ${r.realPct}%`;
+    if (base === 'syn') return `Practice photos only${set}`;
+    return `Both together, ${r.realPct}%${set}`;
+  };
+  const pc = (v) => (v == null ? '-' : (v * 100).toFixed(1));
+  const body = rows.map((r) => [name(r), pc(r.accBracolCut), pc(r.accFieldCut), pc(r.answers), pc(r.right)]);
+  const table = tableTwin(['Version', 'Right, clean-photo cut-off', 'Right, local cut-off', 'Answers', 'Right when it answers'], body, 'Show every version as a table');
+  const dash = rows.some((r) => r.right == null);
+  $('#ns-rule-table').replaceChildren(table, ...(dash ? [h('p', { class: 'note' }, 'A dash means no band reached 95% on the local photos, so the rule would say "not sure" every time. Numbers are out of 100 test photos from Uganda.')] : [h('p', { class: 'note' }, 'Numbers are out of 100 test photos from Uganda.')]));
+}
+
 export function initNotSure() {
+  initRule();
   const root = $('#notsure');
   if (!root || !SCORES || !SCORES.mix) return;
   let model = 'mix', set = 'bracolTest';

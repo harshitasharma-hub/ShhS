@@ -10,10 +10,10 @@ export const COVERAGE = {
     { key: 'kenya', name: 'Kenya photos', sub: 'Stress test only, 197 photos' },
   ],
   rows: [
-    { name: 'One whole leaf on plain paper', cells: [
+    { name: 'One whole leaf on a plain background', cells: [
       { s: 'full', t: 'All 1,747 photos' }, { s: 'full', t: 'Studio scenes' }, { s: 'none', t: 'Close-ups of a part' }, { s: 'unk', t: 'Not checked' }] },
     { name: 'Field background: soil, other leaves', cells: [
-      { s: 'none', t: 'Plain paper only' }, { s: 'part', t: 'Blurred leaves, stems, soil. No real plants' }, { s: 'part', t: 'Some background' }, { s: 'unk', t: 'Not checked' }] },
+      { s: 'none', t: 'Plain background only' }, { s: 'part', t: 'Blurred leaves, stems, soil. No real plants' }, { s: 'part', t: 'Some background' }, { s: 'unk', t: 'Not checked' }] },
     { name: 'Close-up of one spot', cells: [
       { s: 'none', t: 'Whole leaves only' }, { s: 'full', t: 'Aimed at an orange spot' }, { s: 'full', t: '256 pixel close-ups' }, { s: 'unk', t: 'Not checked' }] },
     { name: 'Rain and wet leaves', cells: [
@@ -35,13 +35,29 @@ export const COVERAGE = {
 
 export const LIMITS = [
   { h: 'No rust does not mean healthy.', t: 'In BRACOL, 789 of the 1,063 leaves without rust have another problem. "No rust found" means exactly that. The leaf can still be sick.' },
-  { h: 'One crop, one disease.', t: 'Arabica coffee and leaf rust only. Other diseases and pests need their own work.' },
-  { h: 'Practice photos borrow real leaves.', t: 'Every practice photo starts from a real BRACOL leaf, so they are not free of real data. Rust looks the way it does on the 480 training leaves with rust.' },
-  { h: 'The clean test is generous.', t: 'BRACOL test photos share the paper-colour cue with the training photos. A good score there is probably too good for farm photos. The farm photos are the honest test.' },
-  { h: 'The farm photos are few and small.', t: 'Uganda is 1,792 photos at 256 pixels with no severity labels, and some labels look doubtful. Kenya is 197 photos at 128 pixels with shifted colours. Kenya is a stress test only.' },
-  { h: 'The cut-off comes from clean photos.', t: 'We set rust or no rust on BRACOL validation photos. On farm photos that moves the balance between missed rust and false alarms. About 100 local photos fix most of it.' },
-  { h: 'Not tested on a phone yet.', t: 'Model size, speed and the score after conversion are still to do. The phone code gives no score, so the not-sure band needs another method.' },
+  { h: 'One crop, one question.', t: 'Arabica coffee and leaf rust only. The AI says rust or no rust. It does not name other diseases and it does not give a severity.' },
+  { h: 'Practice photos borrow real leaves.', t: 'Every practice photo starts from a real BRACOL leaf, so they are not free of real data. Rust looks the way it does on the 480 training leaves with rust, and rust of severity 3 and 4 comes from 67 leaves.' },
+  { h: 'The clean test is generous.', t: 'BRACOL test photos share the background-colour cue with the training photos. A good score there is probably too good for farm photos. The farm photos are the honest test.' },
+  { h: 'Sets 3 and 4 are not a clean test.', t: 'We made set 3 after we looked at the Uganda photos that set 1 got wrong, and those include the 300 photos of the local-photo test. So the Uganda scores of sets 3 and 4 are not a clean test. We made set 1 before the first farm score came in.' },
+  { h: 'Small gaps are not proven.', t: 'On the 1,792 farm photos one run\'s 95% interval is about 0.02 wide in ranking score, and on the 261 clean photos about 0.03. We did not test the gaps between versions for significance.' },
+  { h: 'Few runs, and results move.', t: 'Set 1 and set 3 have 3 runs per version, set 4 has 2.', claim: 'rust-spread' },
+  { h: 'The farm photos are few and small.', t: 'Uganda is 1,792 photos at 256 pixels with no severity labels, and some labels look doubtful. Near copies may remain. Kenya is 197 photos at 128 pixels with shifted colours. Kenya is a stress test only.' },
+  { h: 'The cut-off comes from clean photos.', t: 'We set rust or no rust on BRACOL validation photos. On farm photos that moves the balance between missed rust and false alarms. About 100 local photos fix most of it. But our local photos and our test photos come from the same Uganda set, so this shows what local photos can do, not how the AI travels to another region.' },
+  { h: 'Not tested on a phone yet.', t: 'Model size, speed and the score after conversion are still to do. The phone code gives no score, so the not-sure band needs another method. A laptop demo runs today.' },
   { h: 'A photo shows today.', t: 'It does not predict an outbreak and it does not say what to spray. A person decides.' },
+];
+
+/** The brief's five rules, and where we stand. s is full, part or none (same marks as the coverage map). `q` finds a sentence built from the data. */
+export const BRIEF_RULES = [
+  { rule: 'Runs on a phone the user already has', s: 'none', label: 'Not met yet',
+    t: 'Gemma 4 E2B has a ready on-device build (Google\'s LiteRT-LM, 2.6 GB). We have not exported our trained model or run it on a phone.' },
+  { rule: 'The core feature works offline', s: 'part', label: 'Partly met',
+    t: 'Scoring needs no network, only the model file. We ran it on a Mac and on a rented GPU, not on a phone.' },
+  { rule: 'The model file is small enough to side-load', s: 'part', label: 'Partly met',
+    t: 'It is 2.6 GB. That can be side-loaded, but it is big. For scale, Wadhwani AI\'s cotton pest app runs a small model of 11.2 million parameters on the phone, and their paper says farmers resist apps above about 50 MB.' },
+  { rule: 'One interaction in a named local language', s: 'part', label: 'Partly met',
+    t: 'The laptop demo answers in English, Spanish or Portuguese, as text. The phone sketch shows Swahili. A native speaker has not checked any of these lines.' },
+  { rule: 'The tool says "not sure" instead of guessing', s: 'part', label: 'Partly met', q: 'brief-unsure' },
 ];
 
 export const REGION = {
@@ -83,7 +99,7 @@ export const WORDS = [
   { id: 'band', term: 'Not-sure band', def: 'A band of scores around the cut-off. A photo that lands inside it gets "not sure, ask a person".' },
   { id: 'lora', term: 'LoRA', def: 'A cheap way to teach a big AI. We train a small add-on and leave the base model as it is.' },
   { id: 'gemma', term: 'Gemma 4 E2B', def: 'An open AI model from Google DeepMind. It reads photos and text. "E2B" means about 2 billion effective parameters, small enough to aim at a phone.' },
-  { id: 'bracol', term: 'BRACOL', def: 'A public set of 1,747 coffee leaf photos from Brazil, on plain paper. Each leaf has labels for rust and other problems.' },
+  { id: 'bracol', term: 'BRACOL', def: 'A public set of 1,747 coffee leaf photos from Brazil, on a white background. Each leaf has labels for rust and other problems.' },
   { id: 'phoma', term: 'Phoma', def: 'Another coffee leaf disease. Its lesions are dark and can have an orange rim, so it can look like rust. The right answer for it is "no rust".' },
   { id: 'practice', term: 'Practice photo', def: 'A picture made by software, not taken with a camera. Ours are made in Blender from real leaf photos. Some call these synthetic or rendered photos.' },
   { id: 'blender', term: 'Blender', def: 'Free 3D software. We use it to bend a real leaf photo into a 3D leaf, put it in a scene and photograph it with a virtual camera.' },

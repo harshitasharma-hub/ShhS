@@ -51,7 +51,7 @@ export function initGap() {
   const cmp = $('#compare');
   if (cmp && GAP && GAP.bracol && GAP.uganda) {
     const n = Math.min(GAP.bracol.tiles.length, GAP.uganda.tiles.length);
-    buildMosaic($('#mosaic-tidy'), GAP.bracol, n, 'Real · BRACOL', 'Brazil, plain paper');
+    buildMosaic($('#mosaic-tidy'), GAP.bracol, n, 'Real · BRACOL', 'Brazil, white background');
     buildMosaic($('#mosaic-messy'), GAP.uganda, n, 'Real · Uganda', 'A phone on a farm');
     const handle = $('#compare-handle');
     const setSplit = (pctv) => {

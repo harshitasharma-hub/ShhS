@@ -165,8 +165,8 @@ export function initPipeline() {
     return [['label', L.rust ? 'rust' : 'no rust'], ['from leaf', 'BRACOL #897'], ['severity', L.severity], ['in set 1', int(PIPELINE && PIPELINE.trainRenders ? PIPELINE.trainRenders.length : 3) + ' practice photos of it']];
   };
   const TAGS = () => [
-    ['Real photo', 'BRACOL leaf 897 on plain paper', false],
-    ['Cut out', 'The real leaf texture, paper removed', false],
+    ['Real photo', 'BRACOL leaf 897 on a white background', false],
+    ['Cut out', 'The real leaf texture, background removed', false],
     ['3D leaf', 'A live preview of the Blender step. Drag to turn it.', true],
     ['Made in 3D', `${ENV_NAMES[env]} scene, rendered in Blender`, true],
     ['Made in 3D + phone', 'The same picture with phone flaws added', true],

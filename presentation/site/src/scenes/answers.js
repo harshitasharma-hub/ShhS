@@ -83,7 +83,7 @@ function fixes(F, C) {
   if (!plot) return;
   say('#qa-v3-a', C, ['v3-moved'], 'Set 3: no.');
   const has4 = cell('mix', 100, 140, 'combo').length > 0;
-  if (has4) say('#qa-v4-a', C, ['v4-better', 'v4-trade'], 'Set 4: nearly.'); else $('#qa-v4-a') && $('#qa-v4-a').remove();
+  if (has4) say('#qa-v4-a', C, ['v4-better', 'v4-trade', ...(C['clean-v4'].ok ? ['clean-v4'] : [])], 'Set 4: nearly.'); else { $('#qa-v4-a') && $('#qa-v4-a').remove(); }
   const versions = [
     { label: 'Real photos only', short: 'Real only', list: cell('real', 100), color: colorOf('real') },
     { label: 'Both, set 1', short: 'Both, set 1', list: cell('mix', 100), color: colorOf('mix') },
