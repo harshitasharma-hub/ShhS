@@ -359,7 +359,7 @@ export class PipelineScene extends BaseScene {
         ctx.fillStyle = COL.ink; ctx.font = '400 26px "DMMono", monospace'; ctx.fillText(split, X[2], y); ctx.fillText(String(src), X[3], y);
       });
       ctx.fillStyle = COL.slate; ctx.font = '500 23px "DMMono", monospace';
-      ctx.fillText('planned: 1,353 rows, train leaves only', 30, h - 26);
+      ctx.fillText('1,353 rows, train leaves only', 30, h - 26);
     }, 800);
     table.position.set(5.2, 4.3, 1.0);
     table.rotation.y = -0.22;
@@ -521,8 +521,8 @@ export class PipelineScene extends BaseScene {
     // the test cube shrinks to a chip in the phone step, so the dot follows its top
     const s6top = at(P.s6[0], 4.5, P.s6[2]);
     t.add({ id: 'p-s6', text: 'Test', sub: '261 BRACOL leaves no run trains on', anchor: () => s6top.set(P.s6[0], 1.05 + 3.4 * (this.endModel ? this.endModel.scale.x : 1), P.s6[2]), side: 'u', len: 16, color: COL.ink, big: true });
-    t.add({ id: 'p-farm', text: 'Real farm photos', sub: 'the field test', anchor: at(P.s6[0] + 3.4, 2.9, P.s6[2] + 5), side: 'r', len: 20, color: COL.real, big: true });
-    t.add({ id: 'p-chip', text: 'Android build', sub: 'size and speed not measured yet', anchor: at(P.s6[0] - 4.6, 1.5, P.s6[2] + 3.4), side: 'd', len: 12, color: COL.ink });
+    t.add({ id: 'p-farm', text: 'Real farm photos', sub: 'the field test: Uganda, Kenya', anchor: at(P.s6[0] + 3.4, 2.9, P.s6[2] + 5), side: 'r', len: 20, color: COL.real, big: true });
+    t.add({ id: 'p-chip', text: 'Android build', sub: 'not built yet', anchor: at(P.s6[0] - 4.6, 1.5, P.s6[2] + 3.4), side: 'd', len: 12, color: COL.ink });
     [['10%', '128 leaves'], ['25%', '312 leaves'], ['50%', '614 leaves'], ['100%', '1,225 leaves']].forEach(([a, b], i) => {
       const H = 0.8 + [0.1, 0.25, 0.5, 1.0][i] * 5.2;
       t.add({ id: `p-sc${i}`, text: a, sub: b, anchor: at(P.scar[0] - 7.2 + i * 4.8, 0.9 + H + 1.5, P.scar[2] + 0.4), side: 'u', len: 10, color: COL.real, big: i === 0 });

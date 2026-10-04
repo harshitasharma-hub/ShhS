@@ -8,7 +8,7 @@ export class Rail {
     this.segs = CHAPTERS.map((c) => {
       const li = document.createElement('li');
       li.style.flex = `${c.dur} 1 0`;
-      li.style.setProperty('--w', `${Math.ceil(c.name.length * 7.4 + 22)}px`);       // a pill is never narrower than its name
+      li.style.setProperty('--n', String(c.name.length));       // a pill is never narrower than its name (the style sheet turns the count into pixels)
       const seg = document.createElement('button');
       seg.type = 'button';
       seg.className = 'rail__seg';

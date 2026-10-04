@@ -1,6 +1,6 @@
 import { BaseScene } from './baseScene.js';
 import { IMG } from '../assets/index.js';
-import { WORLDS, FIRST_WORLD, REAL_PHOTO, LABELED, REFUSE, WORLD_NOTE, FX_NOTE } from '../showcase.js';
+import { WORLDS, FIRST_WORLD, REAL_PHOTO, LABELED, REFUSE, REFUSE_TOTAL, WORLD_NOTE, FX_NOTE } from '../showcase.js';
 
 // The two steps that show real pictures instead of a 3D scene.
 //   worlds: a real BRACOL photo on the left of the seam, the same leaf rendered in Blender on the right.
@@ -98,7 +98,7 @@ export class ShowcaseScene extends BaseScene {
     const nb = (t) => `<span class="nobr" translate="no">${t}</span>`; // names stay whole in a translated page
     this.sets = {
       labeled: grid(LABELED, 'labeled', `${LABELED.length} ${nb('Blender')} renders from ${LABELED.length} different ${nb('BRACOL')} leaves`),
-      refuse: grid(REFUSE, 'refuse', `${REFUSE.length} ${nb('Blender')} renders made to be unusable`),
+      refuse: grid(REFUSE, 'refuse', `${REFUSE.length} of ${REFUSE_TOTAL} ${nb('Blender')} renders made to be unusable`),
     };
     this._showTab('labeled', false);
   }
@@ -111,7 +111,7 @@ export class ShowcaseScene extends BaseScene {
     requestAnimationFrame(() => requestAnimationFrame(() => this.sets[name].classList.add('is-in')));
     if (announce) {
       this.app.panels.out('note', name === 'refuse'
-        ? 'These are made on purpose, to test that the model answers "not sure" and does not guess.'
+        ? 'These are made on purpose, to test that the model answers "not sure" and does not guess. We have not scored them yet.'
         : 'Only train-split leaves are used. No validation or test leaf feeds a render.');
     }
   }

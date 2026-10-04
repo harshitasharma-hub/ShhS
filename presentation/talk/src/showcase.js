@@ -34,12 +34,13 @@ export const LABELED = [
   { img: 'lab_365', leaf: 365, cls: 'other', label: 'No rust, phoma', scene: 'Sun', alt: 'Coffee leaf with a dark phoma spot, in sun' },
 ];
 
-// Photos the model should not answer. They test the "not sure" answer.
+// Photos the model should not answer. They test the "not sure" answer. data/synthetic/unusable/ holds 150 of them,
+// 30 of each of these five kinds. No run has scored them yet.
+export const REFUSE_TOTAL = 150;
 export const REFUSE = [
   { img: 'bad_dark', cls: 'unsure', label: 'Not sure', scene: 'Too dark', alt: 'A coffee leaf in the dark' },
   { img: 'bad_glare', cls: 'unsure', label: 'Not sure', scene: 'Glare', alt: 'A coffee leaf washed out by glare' },
   { img: 'bad_defocus', cls: 'unsure', label: 'Not sure', scene: 'Out of focus', alt: 'A blurred coffee leaf' },
-  { img: 'bad_cropped', cls: 'unsure', label: 'Not sure', scene: 'Cropped', alt: 'A close crop that cuts the leaf' },
   { img: 'bad_no_leaf', cls: 'unsure', label: 'Not sure', scene: 'No leaf', alt: 'Scattered leaves and soil, with no single leaf to judge' },
   { img: 'bad_tiny', cls: 'unsure', label: 'Not sure', scene: 'Leaf too small', alt: 'A leaf too small in the frame' },
 ];

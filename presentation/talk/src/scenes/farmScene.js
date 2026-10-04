@@ -41,7 +41,8 @@ export class FarmScene extends BaseScene {
       'noor-1': { pos: [-88, 62, 112], target: [-2, 16, 2], fov: 31, parallax: 0.8 },
       'noor-2': { pos: [38, 40, 20], target: [0, 21, -20], fov: 31, parallax: 0.8 },
       'noor-3': { pos: [s.x + 1.0, s.y + 1.8, s.z + 3.7], target: [s.x - 0.1, s.y + 1.2, s.z + 0.1], fov: 38, parallax: 0.4, drift: 0.3 },
-      close: { pos: [-104, 62, 150], target: [2, 22, -2], fov: 28, parallax: 1 },
+      // the target is high, so the farm sits low and the whole word SSHH! shows above the hill
+      close: { pos: [-104, 62, 150], target: [2, 32, -2], fov: 28, parallax: 1 },
     };
   }
 

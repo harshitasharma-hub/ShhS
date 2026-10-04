@@ -69,7 +69,7 @@ function artifact() {
   const { fonts, css, js } = parts();
   const html = readFileSync('index.html', 'utf8');
   const body = html.match(/<body[^>]*>([\s\S]*)<\/body>/)[1].replace('<script src="./dist/app.js" defer></script>', '').trim();
-  const out = `<title>ShhS Crop Doctor</title>\n<style>\n${fonts}\n${css}\n</style>\n${body}\n<script>\n${js}\n</script>\n`;
+  const out = `<title>SSHH! Crop Doctor</title>\n<style>\n${fonts}\n${css}\n</style>\n${body}\n<script>\n${js}\n</script>\n`;
   writeFileSync('dist/artifact.html', out);
   console.log(`dist/artifact.html  ${(out.length / 1024 / 1024).toFixed(2)} MB`);
   if (args.has('--artifact-test')) {

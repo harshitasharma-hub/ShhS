@@ -1,7 +1,7 @@
 {
   "name": "shhs-field-doctor",
   "version": "1.0.0",
-  "description": "ShhS pitch for the World Bank Small AI for Development Hackathon, Challenge 04, Agriculture",
+  "description": "SSHH! pitch for the World Bank Small AI for Development Hackathon, Challenge 04, Agriculture",
   "scripts": {
     "build": "node build.mjs --prod",
     "dev": "node build.mjs --watch",
