@@ -1,0 +1,1 @@
+{"leaf": 1664, "preset": "golden", "seed": 4, "engine": "EEVEE", "samples": 32, "exposure_ev": -0.26, "leaf_len_m": 0.123, "cover": 0.82, "cam_tilt_deg": 16.0, "cam_dist_m": 0.123, "lens_mm": 29.5, "fstop": 3.1, "yaw_deg": 47.4, "n_drops": 0, "setup_s": 0.13, "render_s": 2.1, "light": "golden", "sun_el": 5.2, "sun_az": 23.9, "kelvin": 3256, "sun_energy": 2.73}

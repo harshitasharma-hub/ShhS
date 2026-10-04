@@ -1,0 +1,116 @@
+{
+ "photos_ok": 1747,
+ "photos_failed": {},
+ "sizes": {
+  "2048x1024": 1747
+ },
+ "modes": {
+  "RGB": 1747
+ },
+ "orientation_tags": {
+  "1": 1747
+ },
+ "file_bytes": {
+  "min": 66130,
+  "max": 227120,
+  "mean": 120360
+ },
+ "duplicate_groups": [
+  [
+   758,
+   759
+  ],
+  [
+   813,
+   1022
+  ]
+ ],
+ "near_duplicate_threshold_bits_of_256": 18,
+ "nearest_neighbour_bits_histogram": {
+  "0": 2,
+  "1-5": 0,
+  "6-10": 0,
+  "11-20": 2,
+  "21-40": 687,
+  "41-80": 1053,
+  "81+": 3
+ },
+ "closest_pairs": [
+  {
+   "bits": 0,
+   "ids": [
+    813,
+    1022
+   ]
+  },
+  {
+   "bits": 15,
+   "ids": [
+    758,
+    759
+   ]
+  },
+  {
+   "bits": 21,
+   "ids": [
+    120,
+    163
+   ]
+  },
+  {
+   "bits": 21,
+   "ids": [
+    131,
+    159
+   ]
+  },
+  {
+   "bits": 23,
+   "ids": [
+    102,
+    307
+   ]
+  },
+  {
+   "bits": 23,
+   "ids": [
+    140,
+    1712
+   ]
+  },
+  {
+   "bits": 23,
+   "ids": [
+    581,
+    1031
+   ]
+  },
+  {
+   "bits": 24,
+   "ids": [
+    118,
+    177
+   ]
+  },
+  {
+   "bits": 24,
+   "ids": [
+    949,
+    1633
+   ]
+  },
+  {
+   "bits": 25,
+   "ids": [
+    120,
+    131
+   ]
+  }
+ ],
+ "label_checks": {
+  "nothing_marked_but_not_healthy": [
+   639,
+   671
+  ]
+ }
+}

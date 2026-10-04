@@ -1,0 +1,1 @@
+{"leaf": 960, "preset": "shade", "seed": 205, "engine": "EEVEE", "samples": 32, "exposure_ev": -0.1, "leaf_len_m": 0.16, "cover": 0.63, "cam_tilt_deg": 13.4, "cam_dist_m": 0.24, "lens_mm": 34.0, "fstop": 3.9, "yaw_deg": -13.9, "n_drops": 0, "setup_s": 0.1, "render_s": 0.97, "light": "shade", "sky": "flat_cloud"}

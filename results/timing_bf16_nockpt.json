@@ -1,0 +1,46 @@
+{
+ "scoring": {
+  "70": {
+   "seq_len": 78,
+   "sec_per_photo": 0.5744175414984056,
+   "mean_yes_minus_no_score": {
+    "rust": -4.609375,
+    "no_rust": -9.453125
+   }
+  },
+  "140": {
+   "seq_len": 151,
+   "sec_per_photo": 1.1449672290000308,
+   "mean_yes_minus_no_score": {
+    "rust": -2.0625,
+    "no_rust": -10.0078125
+   }
+  }
+ },
+ "training": {
+  "70:1": {
+   "seq_len": 81,
+   "sec_per_step": 1.519853083500493,
+   "sec_per_photo": 1.519853083500493,
+   "peak_gpu_gb": 12.521684992,
+   "epoch_minutes": 31.030333788135067,
+   "study_hours": 39.208837201150494
+  },
+  "140:1": {
+   "seq_len": 154,
+   "sec_per_step": 2.512507583000115,
+   "sec_per_photo": 2.512507583000115,
+   "peak_gpu_gb": 13.366837248,
+   "epoch_minutes": 51.29702981958568,
+   "study_hours": 65.61037593859959
+  }
+ },
+ "machine": {
+  "chip": "Apple M2",
+  "ram_gb": 24,
+  "torch": "2.14.1",
+  "dtype": "bf16",
+  "gradient_checkpointing": false,
+  "load_seconds": 5.406230250002409
+ }
+}

@@ -1,0 +1,1 @@
+{"leaf": 1664, "preset": "rain", "seed": 37, "engine": "EEVEE", "samples": 32, "exposure_ev": 0.99, "leaf_len_m": 0.142, "cover": 0.77, "cam_tilt_deg": 26.4, "cam_dist_m": 0.158, "lens_mm": 31.0, "fstop": 3.2, "yaw_deg": 5.7, "n_drops": 89, "setup_s": 0.51, "render_s": 1.87, "light": "overcast", "sky": "hdri:forest"}

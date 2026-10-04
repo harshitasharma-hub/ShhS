@@ -1,0 +1,146 @@
+[
+  {
+    "id": "pick-model",
+    "text": "Pick the model: Gemma 4 E2B-it",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "get-bracol",
+    "text": "Get the full BRACOL leaf set",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "pick-label",
+    "text": "Pick the label: rust yes or no",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "download-gemma",
+    "text": "Download and check Gemma 4 E2B-it",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "freeze-split",
+    "text": "Organize BRACOL and freeze the split: train, validation, test",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "timing-trial",
+    "text": "Time a short training run on this Mac",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "choose-hardware",
+    "text": "Choose where to train: this Mac or a rented GPU",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "step-1",
+    "text": "Step 1: zero-shot run, then fine-tune on BRACOL",
+    "done": false
+  },
+  {
+    "id": "step-2",
+    "text": "Step 2: make the synthetic leaves",
+    "done": false
+  },
+  {
+    "id": "synth-probe",
+    "text": "Step 2a: cut a leaf texture from a BRACOL photo and render it in Blender (works on 9 test leaves)",
+    "done": true,
+    "doneAt": "2026-10-04"
+  },
+  {
+    "id": "synth-field-set",
+    "text": "Step 2b: pick the real field photos used to test the synthetic data",
+    "done": false
+  },
+  {
+    "id": "synth-cut-all",
+    "text": "Step 2c: cut textures for all 1,225 train leaves and check the masks",
+    "done": false
+  },
+  {
+    "id": "synth-render-v1",
+    "text": "Step 2d: render synthetic set v1 and check a sample by eye",
+    "done": false
+  },
+  {
+    "id": "step-3",
+    "text": "Step 3: fine-tune on synthetic only, test on BRACOL",
+    "done": false
+  },
+  {
+    "id": "step-4",
+    "text": "Step 4: fine-tune on synthetic plus BRACOL",
+    "done": false
+  },
+  {
+    "id": "scarcity-curve",
+    "text": "Repeat steps 1 and 4 with 10, 25, 50 and 100% of the real photos",
+    "done": false
+  },
+  {
+    "id": "field-test",
+    "text": "Test on real farm photos",
+    "done": false
+  },
+  {
+    "id": "android-export",
+    "text": "Convert the best model for Android and try it on a phone",
+    "done": false
+  },
+  {
+    "id": "0e75ca15",
+    "text": "Hackathon: public GitHub repo with a README (setup and description)",
+    "done": false
+  },
+  {
+    "id": "fdf877df",
+    "text": "Hackathon: hosted demo link (Vercel, Replit or Lovable)",
+    "done": false
+  },
+  {
+    "id": "d3087dc7",
+    "text": "Hackathon: demo video, 60 seconds",
+    "done": false
+  },
+  {
+    "id": "a0e9dd91",
+    "text": "Hackathon: tech video, 60 seconds",
+    "done": false
+  },
+  {
+    "id": "48bbb672",
+    "text": "Hackathon: team video, 60 seconds",
+    "done": false
+  },
+  {
+    "id": "703298ad",
+    "text": "Hackathon: team photo",
+    "done": false
+  },
+  {
+    "id": "8f7d007c",
+    "text": "Hackathon: submit on HackOS and the Google Form before 15:00 Berlin on Sun 4 Oct. No re-submissions",
+    "done": false
+  },
+  {
+    "id": "ac1c2cbd",
+    "text": "AWS: GPU quota approved (support case open since Sun 4 Oct, 04:26)",
+    "done": false
+  },
+  {
+    "id": "8c18b25e",
+    "text": "Zero-shot baseline scored on BRACOL val and test",
+    "done": true,
+    "doneAt": "2026-10-04"
+  }
+]

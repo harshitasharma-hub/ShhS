@@ -1,0 +1,1 @@
+{"leaf": 897, "preset": "rain", "seed": 11, "engine": "CYCLES", "samples": 32, "exposure_ev": 0.17, "leaf_len_m": 0.14, "cover": 0.68, "cam_tilt_deg": 22.8, "cam_dist_m": 0.165, "lens_mm": 28.7, "fstop": 2.5, "yaw_deg": 26.3, "n_drops": 61, "setup_s": 0.12, "render_s": 17.96, "light": "overcast", "sky": "flat_cloud"}

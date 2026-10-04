@@ -1,2 +1,10 @@
 # Model weights are large. Fetch them with `hf download`, never commit them.
 models/
+# Training environment. Rebuild it from requirements-train.txt.
+.venv/
+# Trained adapters are large. The scores, logs and metrics next to them stay.
+runs/*/adapter/
+# State of the EC2 helper script.
+.aws_state
+# Console logs of long runs.
+logs/

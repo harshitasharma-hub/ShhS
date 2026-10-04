@@ -1,0 +1,1 @@
+{"leaf": 1741, "preset": "rain", "seed": 3, "mode": "closeup", "bad": null, "samples": 20, "exposure_ev": -0.7, "res": [512, 512], "leaf_len_m": 0.145, "cover": 0.65, "cam_tilt_deg": 15.4, "cam_dist_m": 0.055, "lens_mm": 34.6, "fstop": 5.3, "frame_cm": 5.7, "aim_uv": [0.5628, 0.2679], "setup_s": 0.65, "render_s": 1.67, "light": "overcast", "sky": "hdri:city"}

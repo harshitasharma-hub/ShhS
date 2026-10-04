@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ECEDE8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14241A" media="(prefers-color-scheme: dark)">
+<title>ShhS checklist</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 28C4 14 12 5 28 4c0 16-8 24-22 24z' fill='%232F7A2C'/%3E%3Cpath d='M6 26 22 10' stroke='%23ECEDE8' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&amp;display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    /* Colors come from the BRACOL photos: studio backdrop, leaf, rust lesion. */
+    --paper: #ECEDE8;
+    --ink: #15291C;
+    --ink-soft: #52665A;
+    --leaf: #2F7A2C;
+    --on-leaf: #fff;
+    --vein: #BCC6BC;
+    --lesion: #9A6F00;
+    --font: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    /* Each vein leaves the midrib this far below the top of its row and rises 1rem over 2rem. */
+    --junction: 2.3125rem;
+    --vein-len: 2.236rem;
+    --vein-angle: -26.565deg;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14241A;
+      --ink: #E4EEE3;
+      --ink-soft: #9CB3A1;
+      --leaf: #5DBB6B;
+      --on-leaf: #0C1A11;
+      --vein: #2C4636;
+      --lesion: #E0B33A;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: var(--paper); -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1rem/1.45 var(--font); }
+  main { max-width: 36rem; margin: 0 auto; padding: clamp(1.5rem, 8vw, 4rem) 1rem 4rem; }
+
+  h1 { margin: 0; font-size: clamp(2rem, 7vw, 2.75rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.025em; text-wrap: balance; }
+  .lede { margin: 0.5rem 0 0; color: var(--ink-soft); text-wrap: pretty; }
+  .count { margin: 1.5rem 0 0.75rem; font: 500 0.8125rem/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+
+  .error { margin: 0 0 1rem; padding: 0.625rem 0.75rem; border-left: 3px solid var(--lesion); border-radius: 0.25rem; background: color-mix(in srgb, var(--lesion) 14%, var(--paper)); font-size: 0.9375rem; }
+  .error code { font: 500 0.875em var(--mono); }
+
+  .list { margin: 0; padding: 0; list-style: none; }
+  .item { position: relative; padding-left: 2.5rem; }
+
+  /* The midrib runs down the left of the list. Each row sends a vein to its checkbox. */
+  .item::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(0.5rem - 1px); width: 2px; background: var(--vein); }
+  .item:first-child::before { top: var(--junction); }
+  .item:last-child::before { bottom: auto; height: var(--junction); }
+  .item:only-child::before { display: none; }
+  .item::after { content: ""; position: absolute; top: calc(var(--junction) - 1px); left: 0.5rem; width: var(--vein-len); height: 2px; border-radius: 1px; background: var(--vein); transform: rotate(var(--vein-angle)); transform-origin: 0 50%; }
+  .item[data-done="true"]::after { top: calc(var(--junction) - 1.5px); height: 3px; background: var(--leaf); }
+  .item[data-next="true"]::after { background: var(--lesion); }
+  .item.just::after { animation: grow 0.28s ease-out; }
+  @keyframes grow { from { transform: rotate(var(--vein-angle)) scaleX(0); } }
+
+  .row { display: grid; grid-template-columns: 1.375rem 1fr auto; gap: 0.75rem; align-items: start; padding: 0.625rem 0; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: color-mix(in srgb, var(--leaf) 20%, transparent); }
+  .text { align-self: baseline; min-width: 0; overflow-wrap: break-word; text-wrap: pretty; }
+  .meta { align-self: baseline; font: 500 0.75rem/1 var(--mono); color: var(--ink-soft); white-space: nowrap; }
+  .item[data-done="true"] .text { color: var(--ink-soft); }
+  .item[data-next="true"] .text { font-weight: 600; }
+
+  .box { appearance: none; -webkit-appearance: none; display: grid; place-items: center; width: 1.375rem; height: 1.375rem; margin: 0; border: 1.5px solid var(--ink-soft); border-radius: 50%; background: transparent; cursor: pointer; }
+  .box::after { content: ""; width: 0.3125rem; height: 0.625rem; border: solid var(--on-leaf); border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg) scale(0); transition: transform 0.12s; }
+  .box:checked { border-color: var(--leaf); background: var(--leaf); }
+  .box:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); }
+  .item[data-next="true"] .box:not(:checked) { border: 2px solid var(--lesion); }
+  .row:hover .box:not(:checked) { border-color: var(--leaf); }
+  .box:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  .add { display: flex; gap: 0.5rem; margin: 1rem 0 0 2.5rem; }
+  .add input { flex: 1; min-width: 0; padding: 0.5625rem 0.75rem; border: 1.5px solid var(--ink-soft); border-radius: 0.5rem; background: transparent; color: inherit; font: inherit; }
+  .add input::placeholder { color: var(--ink-soft); opacity: 1; }
+  .add button { padding: 0.5625rem 1rem; border: 0; border-radius: 0.5rem; background: var(--leaf); color: var(--on-leaf); font: 600 1rem/1.45 var(--font); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .add button:hover { filter: brightness(1.1); }
+  .add button:active { transform: translateY(1px); }
+  .add button:disabled { opacity: 0.6; cursor: default; }
+  .add input:focus-visible, .add button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1><span translate="no">ShhS</span> checklist</h1>
+    <p class="lede">Spot coffee leaf rust from a photo, offline on Android.</p>
+    <p class="count" id="count" aria-live="polite">Loading…</p>
+  </header>
+  <noscript><p class="error">This page needs JavaScript to show the list.</p></noscript>
+  <p class="error" id="error" role="alert" hidden></p>
+  <ol class="list" id="list" role="list"></ol>
+  <form class="add" id="add">
+    <label class="sr" for="new">Add an item</label>
+    <input id="new" name="text" type="text" maxlength="120" placeholder="Add an item…" autocomplete="off" required>
+    <button type="submit">Add item</button>
+  </form>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const list = $('list'), count = $('count'), form = $('add'), field = $('new'), banner = $('error');
+  let items = [], justId = null, pending = 0, loaded = false, offline = false;
+
+  const sig = (rows) => rows.map((i) => [i.id, i.text, i.done, i.doneAt || ''].join('|')).join('\n');
+  const day = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const two = (n) => String(n).padStart(2, '0');
+  const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+  };
+
+  async function api(path, body) {
+    const res = await fetch(path, body && {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'The server rejected the change. Reload the page and try again.');
+    return data;
+  }
+
+  function fail(err) {
+    offline = err instanceof TypeError;
+    banner.replaceChildren();
+    if (offline) {
+      const cmd = document.createElement('code');
+      cmd.translate = false;
+      cmd.textContent = 'python3 checklist/server.py';
+      banner.append('Can’t reach the server. Start it with ', cmd, ', then reload.');
+    } else {
+      banner.textContent = err.message;
+    }
+    banner.hidden = false;
+  }
+
+  function row(item, isNext) {
+    const li = document.createElement('li');
+    li.className = 'item' + (item.id === justId ? ' just' : '');
+    li.dataset.id = item.id;
+    li.dataset.done = item.done;
+    if (isNext) li.dataset.next = 'true';
+
+    const label = document.createElement('label');
+    label.className = 'row';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.className = 'box';
+    box.checked = item.done;
+    box.setAttribute('aria-labelledby', 't-' + item.id);
+    const text = document.createElement('span');
+    text.className = 'text';
+    text.id = 't-' + item.id;
+    text.textContent = item.text;
+    const meta = document.createElement('span');
+    meta.className = 'meta';
+    meta.textContent = item.done && item.doneAt ? day(item.doneAt) : isNext ? 'next' : '';
+
+    label.append(box, text, meta);
+    li.append(label);
+    return li;
+  }
+
+  function render() {
+    const active = document.activeElement?.closest?.('.item')?.dataset.id;
+    const next = items.find((i) => !i.done)?.id;
+    const done = items.filter((i) => i.done).length;
+    count.textContent = items.length ? `${done} of ${items.length} done` : 'No items yet';
+    list.replaceChildren(...items.map((i) => row(i, i.id === next)));
+    justId = null;
+    if (active) list.querySelector(`[data-id="${CSS.escape(active)}"] input`)?.focus();
+  }
+
+  async function refresh() {
+    if (pending || document.hidden) return;
+    try {
+      const latest = await api('/api/items');
+      if (offline) { banner.hidden = true; offline = false; }
+      if (!loaded || sig(latest) !== sig(items)) { loaded = true; items = latest; render(); }
+    } catch (err) {
+      fail(err);
+    }
+  }
+
+  async function write(path, body) {
+    pending++;
+    try { await api(path, body); banner.hidden = true; }
+    catch (err) { fail(err); }
+    finally { pending--; }
+    refresh();
+  }
+
+  list.addEventListener('change', (e) => {
+    const id = e.target.closest('.item').dataset.id;
+    const item = items.find((i) => i.id === id);
+    item.done = e.target.checked;
+    if (item.done) { item.doneAt = today(); justId = id; } else { delete item.doneAt; }
+    render();
+    write('/api/check', { id, done: item.done });
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = field.value.trim();
+    if (!text) return;
+    const button = form.querySelector('button');
+    button.disabled = true;
+    pending++;
+    try {
+      const saved = await api('/api/add', { text });
+      banner.hidden = true;
+      items = saved;
+      justId = saved[saved.length - 1].id;
+      render();
+      field.value = '';
+    } catch (err) {
+      fail(err);
+    } finally {
+      pending--;
+      button.disabled = false;
+    }
+    field.focus();
+  });
+
+  document.addEventListener('visibilitychange', refresh);
+  window.addEventListener('focus', refresh);
+  setInterval(refresh, 5000);
+  refresh();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+{
+ "name": "zeroshot_d140",
+ "detail": 140,
+ "adapter": null,
+ "device": "mps",
+ "torch": "2.14.1",
+ "threshold_from_val": -9.75,
+ "val": {
+  "n": 261,
+  "auc": 0.939727463312369,
+  "accuracy": 0.8850574712643678,
+  "sensitivity": 0.8235294117647058,
+  "specificity": 0.9245283018867925,
+  "precision": 0.875,
+  "f1": 0.8484848484848485
+ },
+ "test": {
+  "n": 261,
+  "auc": 0.9295844123813047,
+  "accuracy": 0.8620689655172413,
+  "sensitivity": 0.7647058823529411,
+  "specificity": 0.9245283018867925,
+  "precision": 0.8666666666666667,
+  "f1": 0.8125,
+  "auc_ci95": [
+   0.8945796752915959,
+   0.9569804047094286
+  ],
+  "accuracy_ci95": [
+   0.8160919540229885,
+   0.9003831417624522
+  ],
+  "by_group": {
+   "rust": {
+    "n": 102,
+    "correct": 0.7647058823529411
+   },
+   "healthy": {
+    "n": 41,
+    "correct": 1.0
+   },
+   "other": {
+    "n": 118,
+    "correct": 0.8983050847457628
+   }
+  },
+  "rust_sensitivity_by_severity": {
+   "1": {
+    "n": 62,
+    "sensitivity": 0.6451612903225806
+   },
+   "2": {
+    "n": 26,
+    "sensitivity": 0.9230769230769231
+   },
+   "3": {
+    "n": 5,
+    "sensitivity": 1.0
+   },
+   "4": {
+    "n": 9,
+    "sensitivity": 1.0
+   }
+  }
+ },
+ "not_sure": {
+  "target_accuracy": 0.95,
+  "margin_from_val": 4.97265625,
+  "val": {
+   "coverage": 0.6053639846743295,
+   "accuracy_answered": 0.9556962025316456
+  },
+  "test": {
+   "coverage": 0.5708812260536399,
+   "accuracy_answered": 0.9463087248322147
+  }
+ },
+ "scoring_seconds": 618.6021736660041
+}
