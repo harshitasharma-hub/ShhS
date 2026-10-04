@@ -1,28 +1,27 @@
 # Kagua Jani, hosted demo
 
-The page behind the hosted demo link: https://shhs-leaf-check.vercel.app
+A presentation of the coffee leaf rust check, built for Noor, the farmer in the World Bank brief (`docs/challenge-04-concept-note.pdf`, Annex B). Live at https://shhs-leaf-check.vercel.app.
 
-It is built for Noor, the farmer in the World Bank brief (`docs/challenge-04-concept-note.pdf`, Annex B). She has a basic phone, uses her daughter's smartphone only at weekends, has no Wi-Fi and buys 3G data bundles. So the page has one screen with one big button. The answer is a full-screen colour, a drawn leaf and a voice. The technical numbers sit in a "For reviewers" box at the bottom.
+It is a prototype for show. The camera is simulated: it takes no real photo and runs no model. The four photos and their answers are saved from the real model (run `real_d140_f10_s0`, four Uganda field photos), and the short "looking at the leaf" step only shows how the real flow feels. Every simulated screen says "Example only". Nothing is uploaded, and the page asks for no camera, microphone or location.
 
-## How the page follows the brief
+The page is built for people who find devices hard: one job per screen, Swahili in text and voice, a person always one tap away, and a card to show a helper. `docs/accessibility-study.md` explains why, with the sources, the measurements and what has not been tested. A native speaker has not checked the Swahili, and no farmer has used the page.
 
-- **Local language.** The page is in Swahili, in text and voice. English is a small switch for reviewers. A native speaker has not checked the Swahili. The voice clips come from Meta MMS-TTS (`facebook/mms-tts-swh`, CC-BY-NC 4.0) and are made by `tools/make_voice.py`.
-- **Fixed list of answers.** Three: rust, no rust, not sure. The model never writes free text, so every answer can be checked.
-- **Human in the loop.** Every answer sends her to a person: the extension officer or her cooperative.
-- **Built light.** No web fonts and no outside scripts. About 55 KB without the voice. Each voice clip is about 200 KB and loads only when it plays.
-- **References.** A row in the white card at the bottom links the talk (on Vercel), the GitHub repo, the results table and the not-sure rule. The links are in the `refs` block of `public/index.html`. Check each one after a push, because GitHub paths only work once the file is on the remote.
+## Folders
 
-## How the model runs
-
-Vercel cannot run the model. It has no GPU, and a function cannot hold 5 to 10 GB of weights. So the page works in two ways:
-
-- The four sample photos show saved answers from the real model (run `real_d140_f10_s0`, four Uganda field photos). They need no server and always work.
-- An uploaded photo goes to `api/score.js`. That function forwards it to the computer that runs `scripts/model/serve.py`. The address of that computer is the `MODEL_URL` setting of the Vercel project. If `MODEL_URL` is not set, or the computer is off, the page says the service is not available.
+- `src/strings.json`: every word the page shows or speaks, in Swahili and English. Edit the words here.
+- `src/index.template.html`: the page itself.
+- `tools/build.py`: builds `public/index.html` from the two files above. It also writes the plain-HTML page that shows when scripts do not run, and the version tag in `public/sw.js`.
+- `tools/make_voice.py`: makes the voice clips from `src/strings.json` with Meta MMS-TTS (`facebook/mms-tts-swh`, CC-BY-NC 4.0) and shrinks them to MP3 with ffmpeg. Run it again after any change to the words that are spoken.
+- `tools/make_icons.py`: draws the app icons and the favicon.
+- `tools/check.mjs`: 55 automated checks in a real Chrome (reflow, target size, contrast, keyboard focus, the camera flow, the back button, offline use, no-script page, audio length, page weight). Run `npm install` in `tools/` first.
+- `tools/shots.mjs`: takes the screenshots used in the study.
+- `public/`: what Vercel serves.
+- `live-upload/`: the old function that forwarded a photo to a laptop running the model. It is not deployed. Its README says how to bring it back.
 
 ## Edit and deploy
 
-- All the words are in the `T` object at the top of the script in `public/index.html`.
-- If the Swahili answers change, make the voice again: `.venv/bin/python presentation/demo/tools/make_voice.py presentation/demo/public/voice`.
-- Deploy with `vercel deploy --prod --yes` in this folder.
-- To turn on live uploads, run `serve.py` on a computer that has a public address (a tunnel works), set `MODEL_URL` to that address in the Vercel project settings, and deploy again.
-- `vercel link` writes a `.env.local` file with a token. Delete it. The `.gitignore` in this folder keeps it out of git.
+1. Change the words in `src/strings.json` or the page in `src/index.template.html`.
+2. If spoken words changed, run `.venv/bin/python presentation/demo/tools/make_voice.py presentation/demo/public/voice` from the repo root.
+3. Run `python3 presentation/demo/tools/build.py`, then `node check.mjs http://localhost:5294/` in `tools/` with `python3 -m http.server 5294 --directory ../public` running.
+4. Deploy with `vercel deploy --prod --yes` in this folder. The Vercel project is not connected to GitHub, so a push alone does not update the live link.
+5. `vercel link` writes a `.env.local` file with a token. Delete it. The `.gitignore` in this folder keeps it out of git.

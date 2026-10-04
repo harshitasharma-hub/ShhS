@@ -1,0 +1,7 @@
+{
+  "name": "kagua-jani-checks",
+  "private": true,
+  "type": "module",
+  "description": "Repeatable checks for the Kagua Jani demo page. Run: npm install && node check.mjs http://localhost:5294/",
+  "dependencies": { "puppeteer-core": "^24.0.0" }
+}
