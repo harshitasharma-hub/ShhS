@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="sw">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kagua Jani">
+<meta name="theme-color" content="#EAF0EC">
+<meta name="description" content="Kagua Jani: take a photo of a coffee leaf and see or hear whether it has rust, has no rust, or the tool is not sure.">
+<title>Kagua Jani</title>
+<style>
+  :root {
+    --mist: #EAF0EC;
+    --paper: #FFFFFF;
+    --ink: #12201A;
+    --ink-soft: #3E5047;
+    --line: #A9BBB0;
+    --leaf: #1F6B45;
+    --leaf-deep: #14492E;
+    --rust: #BF4A12;
+    --rust-deep: #8A3309;
+    --dusk: #34508C;
+    --dusk-deep: #22386A;
+    --sun: #F2B233;
+    --radius: 22px;
+    --gutter: 18px;
+    --font: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --bg: var(--mist);
+    --fg: var(--ink);
+    --focus: var(--dusk);
+    color-scheme: light;
+  }
+  body[data-verdict="rust"] { --verdict: var(--rust); --verdict-deep: var(--rust-deep); }
+  body[data-verdict="no_rust"] { --verdict: var(--leaf); --verdict-deep: var(--leaf-deep); }
+  body[data-verdict="not_sure"] { --verdict: var(--dusk); --verdict-deep: var(--dusk-deep); }
+  body[data-screen="result"] { --bg: var(--verdict); --fg: #fff; --focus: #fff; }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--fg);
+    font: 500 19px/1.45 var(--font);
+    padding: max(var(--gutter), env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right))
+             max(24px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+  }
+  :focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
+
+  .top, main { max-width: 32rem; margin-inline: auto; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .top h1 { margin: 0; font-size: 26px; line-height: 1.1; font-weight: 800; letter-spacing: -0.01em; }
+  .lang {
+    min-width: 56px; min-height: 56px; padding: 0 12px; border-radius: 999px; border: 3px solid currentColor;
+    background: transparent; color: inherit; font: 800 17px var(--font); cursor: pointer; touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  main { display: grid; gap: 18px; }
+  .screen { display: grid; gap: 16px; }
+  .ask { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 800; text-wrap: balance; }
+
+  /* capture screen */
+  .frame {
+    position: relative; height: clamp(190px, 34dvh, 320px); border-radius: var(--radius); overflow: hidden;
+    background: var(--paper); border: 3px dashed var(--line);
+    display: grid; place-content: center; justify-items: center; gap: 12px; padding: 16px; text-align: center;
+  }
+  .frame.has-photo { border: 3px solid var(--paper); padding: 0; background: #0b130f; }
+  .frame.has-photo .outline, .frame.has-photo p { display: none; }
+  .frame .outline { width: 70px; height: auto; color: var(--line); }
+  .frame p { margin: 0; max-width: 16em; font-size: 20px; line-height: 1.35; font-weight: 600; color: var(--ink-soft); }
+  .frame > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+  .scan {
+    position: absolute; inset: 0; display: none; place-content: center; justify-items: center; gap: 14px;
+    background: rgba(18, 32, 26, .66); color: #fff; font-weight: 800; font-size: 22px; text-align: center;
+  }
+  .frame.busy .scan { display: grid; }
+  .spinner { width: 46px; height: 46px; border-radius: 50%; border: 6px solid rgba(255, 255, 255, .3); border-top-color: #fff; }
+  @media (prefers-reduced-motion: no-preference) {
+    .spinner { animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  }
+
+  .big {
+    display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 88px; padding: 0 22px;
+    border: 0; border-radius: var(--radius); background: var(--leaf); color: #fff; font: 800 26px/1.1 var(--font);
+    cursor: pointer; box-shadow: 0 6px 0 var(--leaf-deep); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  .big svg { width: 40px; height: 40px; flex: none; }
+  .big:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--leaf-deep); }
+  .big[disabled] { opacity: .55; cursor: progress; }
+  .error { background: #F6DDCF; color: #5c1f04; border-radius: var(--radius); padding: 16px 18px; font-weight: 700; font-size: 20px; }
+
+  .samples { display: grid; gap: 10px; }
+  .samples h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink-soft); }
+  .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .thumbs button {
+    padding: 0; min-height: 64px; aspect-ratio: 1; border: 3px solid var(--paper); border-radius: 16px; overflow: hidden;
+    background: var(--paper); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  .thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .note { margin: 0; font-size: 19px; font-weight: 700; color: var(--ink-soft); text-align: center; }
+
+  /* result screen */
+  .result { justify-items: center; text-align: center; gap: 12px; }
+  .shot { width: min(100%, 128px); aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; background: #0b130f; border: 2px solid rgba(255, 255, 255, .9); }
+  .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .leaf { width: min(38vw, 24dvh, 150px); height: auto; }
+  .leaf .body { fill: #fff; }
+  .leaf .veins { fill: none; stroke: var(--verdict); stroke-width: 5; stroke-linecap: round; opacity: .55; }
+  .leaf .halo { fill: var(--sun); }
+  .leaf .core { fill: var(--rust); }
+  .leaf .ring { fill: #fff; stroke: var(--verdict); stroke-width: 8; }
+  .leaf .glyph { fill: none; stroke: var(--verdict); stroke-linecap: round; stroke-linejoin: round; }
+  .leaf .dot { fill: var(--verdict); }
+  .leaf .spots, .leaf .badge-check, .leaf .badge-ask { display: none; }
+  body[data-verdict="rust"] .leaf .spots { display: inline; }
+  body[data-verdict="no_rust"] .leaf .badge-check { display: inline; }
+  body[data-verdict="not_sure"] .leaf .badge-ask { display: inline; }
+  .verdict { margin: 0; font-size: clamp(42px, 13vw, 60px); line-height: 1.02; font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; overflow-wrap: anywhere; }
+  .verdict:focus:not(:focus-visible) { outline: none; }
+  .next { margin: 0; max-width: 20em; font-size: 20px; line-height: 1.3; font-weight: 600; }
+  .pill {
+    display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 64px; padding: 0 20px;
+    border: 0; border-radius: var(--radius); background: #fff; color: var(--verdict-deep); font: 800 22px/1.1 var(--font);
+    cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  .pill svg { width: 30px; height: 30px; flex: none; }
+  .pill.alt { background: transparent; color: #fff; border: 3px solid #fff; min-height: 58px; font-size: 20px; }
+  .saved { margin: 0; font-size: 15px; font-weight: 600; opacity: .92; }
+
+  /* for reviewers */
+  .review { background: var(--paper); color: var(--ink); border-radius: var(--radius); font-size: 16px; line-height: 1.5; --focus: var(--dusk); }
+  .review summary { cursor: pointer; padding: 16px 18px; min-height: 56px; font-weight: 700; display: flex; align-items: center; }
+  .review summary::-webkit-details-marker { display: none; }
+  .review summary::after { content: ""; flex: none; margin-left: auto; width: 10px; height: 10px; border-right: 3px solid currentColor; border-bottom: 3px solid currentColor; transform: rotate(45deg) translateY(-3px); }
+  .review details[open] summary::after { transform: rotate(-135deg) translateY(-3px); }
+  .refs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 18px 2px; }
+  .refs-label { font-weight: 700; margin-right: 4px; }
+  .refs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); border-radius: 12px; color: var(--ink); font: 700 16px var(--font); text-decoration: none; touch-action: manipulation; }
+  .review .inner { padding: 0 18px 18px; display: grid; gap: 14px; }
+  .review ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; }
+  .review .gauge { display: grid; gap: 6px; padding-bottom: 4px; }
+  .track { position: relative; height: 22px; border-radius: 8px; overflow: hidden; display: flex; border: 1px solid var(--line); }
+  .zone { height: 100%; }
+  .zone.no { background: #D5E8DC; }
+  .zone.ask { background: repeating-linear-gradient(135deg, #DAE2F2 0 7px, #fff 7px 12px); }
+  .zone.yes { background: #F6DDCF; }
+  .pin { position: absolute; top: -1px; bottom: -1px; width: 4px; margin-left: -2px; background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px #fff; }
+  .labels { position: relative; height: 20px; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+  .labels span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+  .reading { font: 500 13px/1.35 ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+  .linkbtn { justify-self: start; min-height: 48px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 14px; background: transparent; color: var(--ink); font: 700 16px var(--font); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  @media (hover: hover) {
+    .big:hover:not([disabled]) { background: #17573A; }
+    .pill:hover { background: #F1F5F2; }
+    .pill.alt:hover { background: rgba(255, 255, 255, .16); }
+    .thumbs button:hover { border-color: var(--line); }
+    .lang:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
+    .linkbtn:hover, .refs a:hover { background: var(--mist); }
+  }
+</style>
+</head>
+<body data-screen="capture">
+<header class="top">
+  <h1 id="app-name" translate="no">Kagua Jani</h1>
+  <button class="lang" id="lang" type="button">EN</button>
+</header>
+
+<main>
+  <section class="screen" id="capture">
+    <p class="ask" id="ask"></p>
+    <div class="frame" id="frame">
+      <svg class="outline" viewBox="0 0 200 250" aria-hidden="true">
+        <path d="M100 228C52 206 26 160 30 112C34 62 66 24 100 6C134 24 166 62 170 112C174 160 148 206 100 228Z" fill="none" stroke="currentColor" stroke-width="9" stroke-dasharray="16 13" stroke-linecap="round"/>
+        <path d="M100 236V30" fill="none" stroke="currentColor" stroke-width="9" stroke-dasharray="16 13" stroke-linecap="round"/>
+      </svg>
+      <p id="hint"></p>
+      <div class="scan" id="scan" role="status"><div class="spinner" aria-hidden="true"></div><span id="scan-text"></span></div>
+    </div>
+    <button class="big" id="take" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
+      <span id="take-label"></span>
+    </button>
+    <div class="error" id="error" role="alert" hidden></div>
+    <section class="samples" aria-labelledby="samples-title">
+      <h2 id="samples-title"></h2>
+      <div class="thumbs" id="thumbs"></div>
+    </section>
+    <p class="note" id="note"></p>
+  </section>
+
+  <section class="screen result" id="result" aria-live="polite" hidden>
+    <div class="shot"><img id="shot" alt="" width="128" height="96"></div>
+    <svg class="leaf" viewBox="0 0 200 250" aria-hidden="true">
+      <path class="body" d="M100 228C52 206 26 160 30 112C34 62 66 24 100 6C134 24 166 62 170 112C174 160 148 206 100 228Z"/>
+      <g class="veins">
+        <path d="M100 236V26"/>
+        <path d="M100 190L64 162M100 190L136 162M100 154L54 124M100 154L146 124M100 118L52 90M100 118L148 90M100 84L66 58M100 84L134 58"/>
+      </g>
+      <g class="spots">
+        <circle class="halo" cx="68" cy="150" r="15"/><circle class="core" cx="68" cy="150" r="9"/>
+        <circle class="halo" cx="128" cy="170" r="13"/><circle class="core" cx="128" cy="170" r="8"/>
+        <circle class="halo" cx="120" cy="108" r="16"/><circle class="core" cx="120" cy="108" r="10"/>
+        <circle class="halo" cx="70" cy="92" r="12"/><circle class="core" cx="70" cy="92" r="7"/>
+        <circle class="halo" cx="102" cy="52" r="11"/><circle class="core" cx="102" cy="52" r="6"/>
+        <circle class="halo" cx="92" cy="192" r="10"/><circle class="core" cx="92" cy="192" r="6"/>
+      </g>
+      <g class="badge-check">
+        <circle class="ring" cx="150" cy="198" r="38"/>
+        <path class="glyph" d="M133 199l12 12 23-27" stroke-width="11"/>
+      </g>
+      <g class="badge-ask">
+        <circle class="ring" cx="150" cy="198" r="38"/>
+        <path class="glyph" d="M137 183c0-16 26-16 26 0c0 11-13 11-13 22" stroke-width="10"/>
+        <circle class="dot" cx="150" cy="221" r="5.5"/>
+      </g>
+    </svg>
+    <h2 class="verdict" id="verdict" tabindex="-1"></h2>
+    <p class="next" id="next"></p>
+    <button class="pill" id="listen" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18 6a8.5 8.5 0 0 1 0 12"/></svg>
+      <span id="listen-label"></span>
+    </button>
+    <button class="pill alt" id="again" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>
+      <span id="again-label"></span>
+    </button>
+    <p class="saved" id="saved"></p>
+  </section>
+
+  <div class="review" lang="en">
+    <nav class="refs" aria-label="References">
+      <span class="refs-label">References</span>
+      <a href="https://sshh-crop-doctor.vercel.app" target="_blank" rel="noopener">Talk</a>
+      <a href="https://github.com/harshitasharma-hub/ShhS" target="_blank" rel="noopener">Code and README</a>
+      <a href="https://github.com/harshitasharma-hub/ShhS/blob/main/results/summary.md" target="_blank" rel="noopener">Results</a>
+      <a href="https://github.com/harshitasharma-hub/ShhS/blob/main/results/calibration.md" target="_blank" rel="noopener">Not-sure rule</a>
+    </nav>
+    <details>
+    <summary>For reviewers: how it works and its limits</summary>
+    <div class="inner">
+      <div class="gauge" id="gauge" hidden>
+        <div class="track" aria-hidden="true">
+          <div class="zone no" id="z-no"></div><div class="zone ask" id="z-ask"></div><div class="zone yes" id="z-yes"></div><div class="pin" id="pin"></div>
+        </div>
+        <div class="labels" id="labels" aria-hidden="true"></div>
+        <div class="reading" id="gauge-reading"></div>
+        <div class="reading" id="source"></div>
+      </div>
+      <ul>
+        <li><b>What it does.</b> One photo of one coffee leaf goes in. One of three fixed answers comes out: rust, no rust or not sure. It never writes free text, so every answer can be checked. A person makes the final call.</li>
+        <li><b>Model.</b> Gemma&nbsp;4&nbsp;E2B, fine-tuned with LoRA on 128 real BRACOL photos.</li>
+        <li><b>Evidence.</b> On 300 held-out Uganda farm photos, half with rust, it answers 72% of them and is right on 96.5% of those. For the other 28% it says &ldquo;not sure&rdquo;.</li>
+        <li><b>This web demo.</b> The four sample photos show saved answers from the real model. An uploaded photo goes to a laptop that runs the model, and it is not stored. When that laptop is off, uploads do not work.</li>
+        <li><b>The real tool</b> is meant to run on a phone with no internet. A 5.2&nbsp;GB phone file exists. It has not been tested with farmers, and at that size it must be side-loaded.</li>
+        <li><b>Language.</b> Swahili, in text and voice. The voice is machine-made (Meta MMS-TTS, CC-BY-NC&nbsp;4.0) and a native speaker has not checked the Swahili. Because the answers come from a fixed list, a new language needs a few short phrases and recordings, not a new model.</li>
+        <li><b>Built light.</b> No web fonts and no outside scripts, so the page loads on a weak 3G link. The voice files load only when needed.</li>
+        <li><b>What the data does not cover.</b> BRACOL is Brazilian Arabica leaves on clean backgrounds. Our field test is Uganda only, with small close-ups and no severity labels. We have not tested other regions, other crops, or blurred and no-leaf photos. One leaf does not show the state of a whole plant.</li>
+      </ul>
+      <button class="linkbtn" id="upload-lib" type="button">Upload a photo from your library</button>
+    </div>
+    </details>
+  </div>
+</main>
+
+<input id="cam" type="file" accept="image/*" capture="environment" hidden>
+<input id="lib" type="file" accept="image/*" hidden>
+<audio id="voice" preload="none"></audio>
+
+<script>
+const T = {
+  sw: {
+    name: "Kagua Jani", other: "EN", otherName: "English",
+    ask: "Je, jani hili la kahawa lina kutu?",
+    hint: "Piga picha ya jani moja la kahawa, kwa mwanga wa mchana.",
+    take: "Piga picha ya jani", again: "Jani lingine", listen: "Sikiliza",
+    reading: "Inaangalia jani…",
+    verdict: { rust: "Lina kutu", no_rust: "Halina kutu", not_sure: "Sina uhakika" },
+    next: {
+      rust: "Thibitisha na afisa ugani au ushirika wako kabla ya kuchukua hatua.",
+      no_rust: "Jani moja si shamba zima. Kagua majani mengine pia.",
+      not_sure: "Onyesha jani hili kwa afisa ugani au ushirika wako."
+    },
+    samples: "Picha za mfano", sample: "Picha ya mfano", photo: "Picha ya jani",
+    saved: "Jibu lililohifadhiwa kwa picha hii ya mfano.",
+    note: "Ni msaada tu. Mtu ndiye anayeamua.",
+    fail: "Huduma haipatikani kwa sasa. Jaribu picha ya mfano.",
+    bad: "Picha hii haisomeki. Jaribu nyingine."
+  },
+  en: {
+    name: "Leaf check", other: "SW", otherName: "Kiswahili",
+    ask: "Does this coffee leaf have rust?",
+    hint: "Take a photo of one coffee leaf, in daylight.",
+    take: "Take a photo of the leaf", again: "Another leaf", listen: "Listen",
+    reading: "Looking at the leaf…",
+    verdict: { rust: "It has rust", no_rust: "No rust", not_sure: "Not sure" },
+    next: {
+      rust: "Confirm with the extension officer or your cooperative before you act.",
+      no_rust: "One leaf is not the whole farm. Check other leaves too.",
+      not_sure: "Show this leaf to the extension officer or your cooperative."
+    },
+    samples: "Sample photos", sample: "Sample photo", photo: "Photo of the leaf",
+    saved: "Saved answer for this sample photo.",
+    note: "Only a help. A person decides.",
+    fail: "The service is not available right now. Try a sample photo.",
+    bad: "This photo can't be read. Try another one."
+  }
+};
+
+// Answers the real model gave for these four Uganda field photos (fine-tuned Gemma 4 E2B, run real_d140_f10_s0).
+const SAMPLES = [
+  { src: "samples/rust_yes_fi_01050.jpg",   result: { score: 5.0,     verdict: "rust",     cutoff: -1.375, margin: 2.5 } },
+  { src: "samples/no_rust_fi_00422.jpg",    result: { score: -6.0625, verdict: "no_rust",  cutoff: -1.375, margin: 2.5 } },
+  { src: "samples/not_sure_1_fi_00758.jpg", result: { score: -1.125,  verdict: "not_sure", cutoff: -1.375, margin: 2.5 } },
+  { src: "samples/not_sure_2_fi_01524.jpg", result: { score: -1.5,    verdict: "not_sure", cutoff: -1.375, margin: 2.5 } }
+];
+const VOICE = { rust: "voice/rust.wav", no_rust: "voice/no_rust.wav", not_sure: "voice/not_sure.wav" };
+const THEME = { rust: "#BF4A12", no_rust: "#1F6B45", not_sure: "#34508C" };
+
+const $ = (id) => document.getElementById(id);
+const voice = $("voice");
+let lang = "sw", current = null, photoUrl = null, primed = false, voiceBroken = false;
+
+(function pickLanguage() {
+  let saved = null;
+  try { saved = localStorage.getItem("lang"); } catch (e) {}
+  const fromUrl = new URLSearchParams(location.search).get("lang");
+  lang = [fromUrl, saved, "sw"].find((l) => l && T[l]);
+})();
+
+function silentWav() {
+  const n = 800, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+  const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 8000, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, "data"); v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+// Some phones only allow sound after a tap. A silent clip started on the first tap lets the answer play later.
+function primeAudio() {
+  if (primed) return;
+  primed = true;
+  try { voice.src = silentWav(); const p = voice.play(); if (p) p.then(() => voice.pause()).catch(() => {}); } catch (e) {}
+}
+function speak(verdict) {
+  if (lang !== "sw" || voiceBroken) return;
+  voice.src = VOICE[verdict];
+  const p = voice.play(); if (p) p.catch(() => {});
+}
+function stopVoice() { try { voice.pause(); } catch (e) {} }
+voice.addEventListener("error", () => { if (voice.src.includes("/voice/")) { voiceBroken = true; paint(); } });
+
+function paint() {
+  const t = T[lang];
+  document.documentElement.lang = lang;
+  $("app-name").textContent = t.name;
+  const l = $("lang"); l.textContent = t.other; l.setAttribute("aria-label", t.otherName);
+  $("ask").textContent = t.ask; $("hint").textContent = t.hint; $("take-label").textContent = t.take;
+  $("scan-text").textContent = t.reading; $("samples-title").textContent = t.samples; $("note").textContent = t.note;
+  $("listen-label").textContent = t.listen; $("again-label").textContent = t.again;
+  document.querySelectorAll("#thumbs button").forEach((b, i) => b.setAttribute("aria-label", `${t.sample} ${i + 1}`));
+  $("listen").hidden = lang !== "sw" || voiceBroken;
+  if (current) {
+    $("verdict").textContent = t.verdict[current.result.verdict];
+    $("next").textContent = t.next[current.result.verdict];
+    $("shot").alt = t.photo;
+    $("saved").textContent = current.sample === null ? "" : t.saved;
+  }
+  paintGauge();
+}
+
+function paintGauge() {
+  const box = $("gauge");
+  if (!current) { box.hidden = true; return; }
+  const r = current.result, lo = r.cutoff - r.margin, hi = r.cutoff + r.margin, MIN = -9, MAX = 9;
+  const pct = (v) => Math.max(0, Math.min(100, ((v - MIN) / (MAX - MIN)) * 100));
+  const num = new Intl.NumberFormat("en", { minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: "exceptZero" });
+  const f = (v) => num.format(v);
+  $("z-no").style.width = pct(lo) + "%";
+  $("z-ask").style.width = (pct(hi) - pct(lo)) + "%";
+  $("z-yes").style.width = (100 - pct(hi)) + "%";
+  $("pin").style.left = pct(r.score) + "%";
+  const labels = $("labels"); labels.textContent = "";
+  ["No rust", "Not sure", "Rust"].forEach((text, i) => {
+    const centers = [pct(lo) / 2, (pct(lo) + pct(hi)) / 2, (pct(hi) + 100) / 2];
+    const s = document.createElement("span"); s.style.left = centers[i] + "%"; s.textContent = text; labels.appendChild(s);
+  });
+  $("gauge-reading").textContent = `This photo: score ${f(r.score)}. Cut-off ${f(r.cutoff)}. “Not sure” band ${f(lo)} to ${f(hi)}.`;
+  $("source").textContent = current.sample === null ? "Live answer from the model." : "Saved answer from the model for this sample photo.";
+  box.hidden = false;
+}
+
+function setFramePhoto(url) {
+  const frame = $("frame");
+  frame.querySelectorAll("img").forEach((n) => n.remove());
+  if (url) { const img = new Image(); img.alt = T[lang].photo; img.src = url; frame.prepend(img); }
+  frame.classList.toggle("has-photo", Boolean(url));
+}
+function showError(msg) { const e = $("error"); e.textContent = msg; e.hidden = false; }
+function setBusy(on) {
+  $("frame").classList.toggle("busy", on);
+  $("frame").setAttribute("aria-busy", String(on));
+  $("take").disabled = on;
+}
+
+function show(result, src, sample) {
+  current = { result, sample };
+  document.body.dataset.screen = "result";
+  document.body.dataset.verdict = result.verdict;
+  document.querySelector('meta[name="theme-color"]').content = THEME[result.verdict];
+  $("shot").src = src;
+  $("capture").hidden = true; $("result").hidden = false;
+  paint();
+  window.scrollTo(0, 0);
+  $("verdict").focus({ preventScroll: true });
+  speak(result.verdict);
+}
+function reset() {
+  stopVoice();
+  current = null;
+  document.body.dataset.screen = "capture";
+  delete document.body.dataset.verdict;
+  document.querySelector('meta[name="theme-color"]').content = "#EAF0EC";
+  if (photoUrl) { URL.revokeObjectURL(photoUrl); photoUrl = null; }
+  setFramePhoto(null);
+  $("error").hidden = true;
+  $("result").hidden = true; $("capture").hidden = false;
+  paint();
+  window.scrollTo(0, 0);
+  $("take").focus({ preventScroll: true });
+}
+
+async function toJpeg(file) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 720 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.92));
+  return { blob, url: URL.createObjectURL(blob) };
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  $("error").hidden = true;
+  let jpeg;
+  try { jpeg = await toJpeg(file); } catch (e) { return showError(T[lang].bad); }
+  if (photoUrl) URL.revokeObjectURL(photoUrl);
+  photoUrl = jpeg.url;
+  setFramePhoto(jpeg.url); setBusy(true);
+  let result;
+  try {
+    const res = await fetch("/api/score", { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: jpeg.blob });
+    if (res.status === 400 || res.status === 413) throw new Error("bad");
+    if (!res.ok) throw new Error("net");
+    result = await res.json();
+  } catch (e) {
+    setBusy(false);
+    return showError(e.message === "bad" ? T[lang].bad : T[lang].fail);
+  }
+  setBusy(false);
+  show(result, jpeg.url, null);
+}
+
+SAMPLES.forEach((s, i) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  const im = new Image(); im.src = s.src; im.alt = ""; im.width = 96; im.height = 96;
+  b.appendChild(im);
+  b.addEventListener("click", () => { $("error").hidden = true; show(s.result, s.src, i); });
+  $("thumbs").appendChild(b);
+});
+$("take").addEventListener("click", () => { primeAudio(); $("cam").click(); });
+$("upload-lib").addEventListener("click", () => { primeAudio(); $("lib").click(); });
+["cam", "lib"].forEach((id) => $(id).addEventListener("change", (e) => { handleFile(e.target.files[0]); e.target.value = ""; }));
+$("again").addEventListener("click", reset);
+$("listen").addEventListener("click", () => { if (current) speak(current.result.verdict); });
+$("lang").addEventListener("click", () => {
+  lang = lang === "sw" ? "en" : "sw";
+  try { localStorage.setItem("lang", lang); } catch (e) {}
+  stopVoice(); paint();
+});
+paint();
+</script>
+</body>
+</html>
