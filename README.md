@@ -1,4 +1,4 @@
-<h1 align="center">ShhS</h1>
+<h1 align="center">ShhS | Synthetic 3D leaves that grow the training set of a small AI. </h1>
 
 <p align="center">
   <b>Start here: <a href="https://sshh-crop-doctor.vercel.app">open the talk</a></b><br>
